@@ -70,7 +70,6 @@ import personaMarkdownTest from './PersonaMarkdown.test';
 import skillMarkdownParserTest from './SkillMarkdownParser.test';
 import modelScopeDirectClientTest from './ModelScopeDirectClient.test';
 import liteModelTest from './LiteModel.test';
-import liteModelRuntimeRootTest from './LiteModelRuntimeRoot.test';
 
 export default function testsuite() {
   localUnitTest();
@@ -137,7 +136,6 @@ export default function testsuite() {
   skillMarkdownParserTest();
   modelScopeDirectClientTest();
   liteModelTest();
-  liteModelRuntimeRootTest();
   personaStoreTest();
   personaRouterTest();
   personaPromptTest();

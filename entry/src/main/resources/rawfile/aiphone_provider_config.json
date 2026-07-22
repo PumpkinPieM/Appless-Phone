@@ -1,0 +1,4 @@
+{
+  "LOCAL_MODEL_MODE": "lite",
+  "LITE_MODEL_ROOT": "/data/storage/el2/base/files/lite_llm"
+}

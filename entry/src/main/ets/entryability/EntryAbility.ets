@@ -17,7 +17,7 @@ import {
   xOAuthConfigFromProvider
 } from '@loop/agent-core';
 import { configurePersonaStoreFromRaw } from '../model/PersonaStore';
-import { configureLiteModelComposition, releaseEntryLiteModel } from '../model/LiteModelComposition';
+import { configureLiteModel, releaseLiteModel } from '../model/LiteModel';
 
 const DOMAIN = 0x0000;
 const LOCAL_PROVIDER_CONFIG_RAWFILE = 'aiphone_provider_config.json';
@@ -204,7 +204,7 @@ export default class EntryAbility extends UIAbility {
     } catch (err) {
       hilog.error(DOMAIN, 'testTag', 'Failed to set colorMode. Cause: %{public}s', JSON.stringify(err));
     }
-    configureLiteModelComposition(this.context);
+    configureLiteModel(this.context.filesDir);
     this.loadLocalProviderConfig();
     this.loadComposioConfig();
     this.loadPersonaPacks();
@@ -279,7 +279,7 @@ export default class EntryAbility extends UIAbility {
   }
 
   onDestroy(): void {
-    releaseEntryLiteModel().catch((error: Error): void => {
+    releaseLiteModel().catch((error: Error): void => {
       hilog.error(DOMAIN, 'testTag', 'Lite model release failed: %{public}s', error.message);
     });
     hilog.info(DOMAIN, 'testTag', '%{public}s', 'Ability onDestroy');

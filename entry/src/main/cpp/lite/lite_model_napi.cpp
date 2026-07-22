@@ -1,16 +1,31 @@
-#include "lite_runtime.h"
-
 #include "napi/native_api.h"
 
+#ifdef LITE_LLM_VENDOR_AVAILABLE
+#include "lite_llm.h"
+#endif
+
 #include <memory>
+#include <mutex>
+#include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace {
 enum class Operation { Initialize, Generate, Release };
 
+class NativeError final : public std::runtime_error {
+public:
+    NativeError(std::string code, const std::string& message)
+        : std::runtime_error(message), code_(std::move(code)) {}
+
+    const std::string& Code() const noexcept { return code_; }
+
+private:
+    std::string code_;
+};
+
 struct WorkData {
-    napi_env env = nullptr;
     napi_deferred deferred = nullptr;
     napi_async_work work = nullptr;
     Operation operation = Operation::Initialize;
@@ -19,6 +34,13 @@ struct WorkData {
     std::string errorCode;
     std::string errorMessage;
 };
+
+std::mutex modelMutex;
+
+#ifdef LITE_LLM_VENDOR_AVAILABLE
+std::unique_ptr<lite_llm::LiteLlm> model;
+std::string loadedConfigPath;
+#endif
 
 bool ReadString(napi_env env, napi_value value, std::string& output) {
     napi_valuetype type;
@@ -32,18 +54,57 @@ bool ReadString(napi_env env, napi_value value, std::string& output) {
     return true;
 }
 
+void InitializeModel(const std::string& configPath) {
+#ifdef LITE_LLM_VENDOR_AVAILABLE
+    if (model && loadedConfigPath == configPath) return;
+    auto nextModel = lite_llm::LiteLlm::CreateFromConfig(configPath);
+    if (!nextModel) {
+        throw NativeError("MODEL_LOAD_FAILED", "Vendor model creation returned null.");
+    }
+    model = std::move(nextModel);
+    loadedConfigPath = configPath;
+#else
+    (void)configPath;
+    throw NativeError("NATIVE_UNAVAILABLE", "The vendor header/library was not compiled for this ABI.");
+#endif
+}
+
+std::string GenerateText(const std::string& prompt) {
+#ifdef LITE_LLM_VENDOR_AVAILABLE
+    if (!model) {
+        throw NativeError("MODEL_NOT_INITIALIZED", "initialize must complete before generation.");
+    }
+    const std::string output = model->Generate(prompt);
+    if (output.empty()) {
+        throw NativeError("EMPTY_MODEL_RESPONSE", "Vendor generation returned an empty response.");
+    }
+    return output;
+#else
+    (void)prompt;
+    throw NativeError("NATIVE_UNAVAILABLE", "The vendor header/library was not compiled for this ABI.");
+#endif
+}
+
+void ReleaseModel() {
+#ifdef LITE_LLM_VENDOR_AVAILABLE
+    model.reset();
+    loadedConfigPath.clear();
+#endif
+}
+
 void Execute(napi_env, void* rawData) {
     auto* data = static_cast<WorkData*>(rawData);
     if (!data->errorCode.empty()) return;
     try {
+        std::lock_guard<std::mutex> lock(modelMutex);
         if (data->operation == Operation::Initialize) {
-            LiteRuntime::Instance().Initialize(data->input).get();
+            InitializeModel(data->input);
         } else if (data->operation == Operation::Generate) {
-            data->output = LiteRuntime::Instance().Generate(data->input).get();
+            data->output = GenerateText(data->input);
         } else {
-            LiteRuntime::Instance().Release().get();
+            ReleaseModel();
         }
-    } catch (const LiteRuntimeError& error) {
+    } catch (const NativeError& error) {
         data->errorCode = error.Code();
         data->errorMessage = error.what();
     } catch (const std::exception& error) {
@@ -85,7 +146,6 @@ void Complete(napi_env env, napi_status status, void* rawData) {
 
 napi_value Queue(napi_env env, napi_callback_info info, Operation operation) {
     auto data = std::make_unique<WorkData>();
-    data->env = env;
     data->operation = operation;
 
     napi_value promise;
@@ -128,7 +188,11 @@ napi_value Release(napi_env env, napi_callback_info info) {
 
 napi_value IsVendorAvailable(napi_env env, napi_callback_info) {
     napi_value result;
-    napi_get_boolean(env, LiteRuntime::Instance().IsVendorAvailable(), &result);
+#ifdef LITE_LLM_VENDOR_AVAILABLE
+    napi_get_boolean(env, true, &result);
+#else
+    napi_get_boolean(env, false, &result);
+#endif
     return result;
 }
 } // namespace
@@ -142,14 +206,6 @@ static napi_value Init(napi_env env, napi_value exports) {
         {"isVendorAvailable", nullptr, IsVendorAvailable, nullptr, nullptr, nullptr, napi_default, nullptr}
     };
     napi_define_properties(env, exports, sizeof(descriptors) / sizeof(descriptors[0]), descriptors);
-
-    // Some HarmonyOS module loaders resolve a default ArkTS import by reading
-    // the literal `default` property instead of returning the N-API exports
-    // object. Export both shapes so the bridge behaves consistently.
-    napi_value defaultExport = nullptr;
-    napi_create_object(env, &defaultExport);
-    napi_define_properties(env, defaultExport, sizeof(descriptors) / sizeof(descriptors[0]), descriptors);
-    napi_set_named_property(env, exports, "default", defaultExport);
     return exports;
 }
 EXTERN_C_END

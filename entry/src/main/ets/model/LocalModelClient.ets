@@ -21,7 +21,7 @@ import {
 } from './PersonaMemoryUpdate';
 import { preparePersonaPrompt } from './PersonaPrompt';
 import { PersonaMemoryRuntimeData, PersonaRuntimeData } from './PersonaTypes';
-import { entryLoopModel } from './LiteModelComposition';
+import { createEntryModel } from './LiteModel';
 
 export interface A2uiStreamMeta {
   thinkClosed: boolean;
@@ -257,7 +257,7 @@ export async function callLocalModel(
   };
 
   try {
-    const backend = new LoopBackend(await entryLoopModel(settings));
+    const backend = new LoopBackend(await createEntryModel(settings));
     const result = await backend.run(request, {
       onEvent: (event: AgentEvent): void => {
         loopDebug += event.kind + ': ' + event.text + '\n';
