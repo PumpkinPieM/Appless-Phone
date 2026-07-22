@@ -1,0 +1,6 @@
+{
+  "name": "liblite_model_native.so",
+  "types": "./Index.d.ts",
+  "version": "1.0.0",
+  "description": "Native bridge for the Lite local LLM runtime."
+}

@@ -1060,12 +1060,14 @@ struct Index {
 
   private getSettings(): LocalModelSettings {
     return {
+      mode: defaultLocalModelSettings().mode,
       provider: defaultLocalModelSettings().provider,
       baseUrl: this.baseUrl,
       model: this.selectedModel,
       apiKey: this.apiKey,
       customParametersJson: this.customParametersJson,
-      ignoreToolSurfaceUpdates: this.ignoreToolSurfaceUpdates
+      ignoreToolSurfaceUpdates: this.ignoreToolSurfaceUpdates,
+      liteModelRoot: defaultLocalModelSettings().liteModelRoot
     };
   }
 

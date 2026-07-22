@@ -2,11 +2,13 @@ import { AgentEvent } from '../agent/AgentEvent';
 import { A2uiSurfaceState } from './runtime/A2uiTypes';
 
 export interface LoopModelSettings {
+  mode?: 'lite' | 'remote' | 'scripted';
   provider: string;
   baseUrl: string;
   apiKey: string;
   model: string;
   customParametersJson: string;
+  liteModelRoot?: string;
 }
 
 export interface LoopMessage {

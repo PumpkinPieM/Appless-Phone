@@ -21,6 +21,7 @@ import {
 } from './PersonaMemoryUpdate';
 import { preparePersonaPrompt } from './PersonaPrompt';
 import { PersonaMemoryRuntimeData, PersonaRuntimeData } from './PersonaTypes';
+import { entryLoopModel } from './LiteModelComposition';
 
 export interface A2uiStreamMeta {
   thinkClosed: boolean;
@@ -232,7 +233,6 @@ export async function callLocalModel(
     return clearExecutedToolRequests(attachPersonaDataToSurface(surface, runtimePersona, runtimePersonaMemory));
   };
   const debug = requestDebug(settings, prompt, history);
-  const backend = new LoopBackend();
   aiLogInfo('[AIPhone][ToolSurfaceMode] ignore=' +
     (settings.ignoreToolSurfaceUpdates ? 'true' : 'false'));
   const request: LoopBackendRequest = {
@@ -240,11 +240,13 @@ export async function callLocalModel(
     userPrompt: preparedPersona.userPrompt,
     history: loopHistory(history),
     modelSettings: {
+      mode: settings.mode,
       provider: settings.provider,
       baseUrl: settings.baseUrl,
       apiKey: settings.apiKey,
       model: settings.model,
-      customParametersJson: settings.customParametersJson
+      customParametersJson: settings.customParametersJson,
+      liteModelRoot: settings.liteModelRoot
     },
     surfaceId: 'surface_model',
     actionId: 'model_tool_request',
@@ -255,6 +257,7 @@ export async function callLocalModel(
   };
 
   try {
+    const backend = new LoopBackend(await entryLoopModel(settings));
     const result = await backend.run(request, {
       onEvent: (event: AgentEvent): void => {
         loopDebug += event.kind + ': ' + event.text + '\n';

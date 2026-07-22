@@ -11,11 +11,20 @@ export {
 } from './src/main/ets/agent/ToolRegistry';
 export { ReActAgentRunner, AgentListener, UiRenderHandler } from './src/main/ets/agent/ReActAgentRunner';
 export { LocalModel } from './src/main/ets/model/LocalModel';
+export { LiteInferenceBackend } from './src/main/ets/model/LiteInferenceBackend';
+export { LiteModel } from './src/main/ets/model/LiteModel';
+export { LiteInitializeRequest, LiteModelErrorCode, LiteModelOptions, liteModelError } from './src/main/ets/model/LiteModelTypes';
 export { LlmProvider } from './src/main/ets/model/LlmProvider';
 export { ScriptedLocalModel } from './src/main/ets/model/ScriptedLocalModel';
 export { ScriptedA2uiModel, buildTaskCardComponents } from './src/main/ets/a2ui/ScriptedA2uiModel';
 export { OpenAiCompatibleModel } from './src/main/ets/model/OpenAiCompatibleModel';
-export { createLoopModel, createLoopModelInfo, LoopModelInfo } from './src/main/ets/model/LoopModelFactory';
+export {
+  createLoopModel,
+  createLoopModelInfo,
+  LoopModelDependencies,
+  LoopModelInfo,
+  LoopModelMode
+} from './src/main/ets/model/LoopModelFactory';
 export { ModelScopeClient } from './src/main/ets/modelscope/ModelScopeClient';
 export { ModelScopeConfig } from './src/main/ets/modelscope/ModelScopeConfig';
 export {

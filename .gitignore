@@ -34,3 +34,13 @@ entry/src/main/resources/rawfile/agconnect-services.json
 /huawei-browser-*.jpeg
 /home-before-haitai.jpeg
 /aiphone-*.json
+
+# Private Lite LLM vendor inputs (keep the provisioning README)
+entry/src/main/cpp/vendor/lite_llm/include/
+entry/src/main/cpp/vendor/lite_llm/lib/*
+!entry/src/main/cpp/vendor/lite_llm/lib/arm64-v8a/
+!entry/src/main/cpp/vendor/lite_llm/lib/x86_64/
+entry/src/main/cpp/vendor/lite_llm/lib/arm64-v8a/*
+entry/src/main/cpp/vendor/lite_llm/lib/x86_64/*
+!entry/src/main/cpp/vendor/lite_llm/lib/arm64-v8a/.gitkeep
+!entry/src/main/cpp/vendor/lite_llm/lib/x86_64/.gitkeep

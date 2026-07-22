@@ -198,6 +198,12 @@ export function aiphoneToolDescriptionForModel(toolId: string): string {
 }
 
 export class LoopBackend {
+  private injectedModel: LocalModel | null;
+
+  constructor(model: LocalModel | null = null) {
+    this.injectedModel = model;
+  }
+
   async run(request: LoopBackendRequest, callbacks: LoopBackendCallbacks): Promise<LoopRunResult> {
     const conversation = this.buildConversation(request);
     const model = this.buildModel(request);
@@ -280,8 +286,23 @@ export class LoopBackend {
   }
 
   private buildModel(request: LoopBackendRequest): LocalModel {
+    if (this.injectedModel !== null) {
+      return this.injectedModel;
+    }
     const settings = request.modelSettings;
     const provider = new LlmProvider(settings.provider, settings.apiKey, settings.baseUrl, settings.model, settings.customParametersJson);
+    if (settings.mode === 'lite') {
+      throw new Error('[NATIVE_UNAVAILABLE] Lite mode requires an application-injected inference backend.');
+    }
+    if (settings.mode === 'remote') {
+      if (!provider.isConfigured()) {
+        throw new Error('[REMOTE_NOT_CONFIGURED] Remote mode requires an API key, base URL, and model.');
+      }
+      return new OpenAiCompatibleModel(provider);
+    }
+    if (settings.mode === 'scripted') {
+      return new ScriptedLocalModel();
+    }
     return provider.isConfigured() ? new OpenAiCompatibleModel(provider) : new ScriptedLocalModel();
   }
 
