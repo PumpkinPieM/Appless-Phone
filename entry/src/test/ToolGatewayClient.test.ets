@@ -63,6 +63,7 @@ import {
   saveConfiguredMailDraft,
   sortTravelOptionsByDeparture,
   streamFoodProviderResultsWithPartials,
+  trainSearchSource,
   FoodProviderPartialSnapshot,
   FoodProviderResult
 } from '@loop/agent-core';
@@ -208,6 +209,18 @@ export default function toolGatewayClientTest() {
       expect(isRegisteredToolId('flight.search')).assertTrue();
       expect(isRegisteredToolId('food.search')).assertTrue();
       expect(isRegisteredToolId('social.reply.send')).assertFalse();
+    });
+
+    it('uses train search query args instead of the user prompt', 0, () => {
+      expect(trainSearchSource(
+        '查询明天深圳到上海的高铁',
+        looseObject('{"query":"2026-07-24 深圳到北京高铁"}')
+      )).assertEqual('2026-07-24 深圳到北京高铁');
+    });
+
+    it('falls back to the user prompt when train query args are absent', 0, () => {
+      expect(trainSearchSource('查询明天深圳到上海的高铁', null))
+        .assertEqual('查询明天深圳到上海的高铁');
     });
 
     it('allows only explicit dynamic catalog aliases to enter the local tool host', 0, () => {

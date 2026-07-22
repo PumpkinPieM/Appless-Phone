@@ -1,12 +1,33 @@
 # Lite LLM vendor inputs
 
-The repository builds the native bridge even when these private vendor inputs are absent. In that case `isVendorAvailable()` returns `false`. To enable real local inference for an ABI, copy:
+Select the implementation with one variable in `entry/src/main/cpp/CMakeLists.txt`:
+
+```cmake
+set(LITE_USE_MOCK_VENDOR ON)  # ON for mock, OFF for real vendor
+```
+
+When set to `OFF`, provide:
 
 - Public header: `include/lite_llm.h`
 - Primary library: `lib/<abi>/liblite_llm.so`
 - All transitive shared libraries: `lib/<abi>/*.so`
 
-Supported project ABI directories are `lib/arm64-v8a/` and `lib/x86_64/`. Each library must be built for HarmonyOS and for the ABI of its directory.
+The entry module builds both `arm64-v8a` and `x86_64`. With the toggle `ON`, both use the mock. With the toggle `OFF`, ARM64 requires the real vendor library while x86-64 automatically uses the mock when a real x86-64 library is absent. This supports a real ARM64 device and an x86 simulator without editing `abiFilters`.
+
+## Mock behavior
+
+Before launching the app, provision `config.json` and its model files under `LITE_MODEL_ROOT`. The mock reads the configuration path passed by the app, resolves its `foo` entry relative to `LITE_MODEL_ROOT`, reads that file, and logs its content with tag `LiteLlmMock`.
+
+`Generate` ignores its prompt and returns the exact text loaded from the configured `foo` file. Put the desired ReAct response in that file.
+
+## Verification logs
+
+Filter HiLog by `LiteLlmModel` and `LiteLlmMock`. A successful Lite path reports:
+
+- `MODEL_SELECTED mode=lite implementation=LiteModel`
+- `MODEL_INIT_COMPLETE implementation=LiteModel`
+- `Generate returning foo content ...` from the mock vendor
+- `VENDOR_RESPONSE valid=true kind=action|final ...`
 
 The spike bridge expects this API:
 
@@ -24,7 +45,13 @@ Provision model data separately from the HAP:
 <runtimeRoot>/
   config.json
   model/
-    <weights, tokenizer, vocabulary, and auxiliary files>
+    foo.txt
+```
+
+```json
+{
+  "foo": "model/foo.txt"
+}
 ```
 
 Set these optional fields in the ignored `entry/src/main/resources/rawfile/aiphone_provider_config.json`:

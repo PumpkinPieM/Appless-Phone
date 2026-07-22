@@ -8803,8 +8803,19 @@ async function callLocalFoodSearch(prompt: string, surfaceId: string, emitJsonl:
   return planA2uiPartialUpdate(null, finalState).jsonl;
 }
 
-async function callLocalTrainSearch(prompt: string, surfaceId: string): Promise<string> {
-  const source = prompt;
+export function trainSearchSource(prompt: string, args: Object | null): string {
+  if (args !== null) {
+    const record = args as Record<string, Object | string | number | boolean | null | undefined>;
+    const query = record.query;
+    if (typeof query === 'string' && query.trim().length > 0) {
+      return query.trim();
+    }
+  }
+  return prompt;
+}
+
+async function callLocalTrainSearch(prompt: string, surfaceId: string, args: Object | null = null): Promise<string> {
+  const source = trainSearchSource(prompt, args);
   const stations = await load12306Stations();
   const routeNames = extractRouteNames(source, stations.names);
   const date = parseTravelDate(source);
@@ -12135,7 +12146,7 @@ async function buildLocalToolJsonl(toolId: string, prompt: string, surfaceId: st
     return callLocalFlightSearch(prompt, surfaceId);
   }
   if (toolId === 'train.search') {
-    return callLocalTrainSearch(prompt, surfaceId);
+    return callLocalTrainSearch(prompt, surfaceId, args);
   }
   if (toolId === 'food.search') {
     return callLocalFoodSearch(prompt, surfaceId, emitJsonl, args);
