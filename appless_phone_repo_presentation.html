@@ -1,0 +1,1367 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Appless-Phone Repo 架构介绍</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --panel: #11182d;
+      --panel-2: #16213a;
+      --panel-3: #0f1730;
+      --text: #eef2ff;
+      --muted: #aeb9d4;
+      --line: #2a385d;
+      --accent: #6ea8fe;
+      --accent-2: #69d6c5;
+      --accent-3: #f4bd67;
+      --danger: #ff8f8f;
+      --ok: #8be0a4;
+      --violet: #b79cff;
+      --shadow: 0 16px 50px rgba(0, 0, 0, .24);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 15% 0%, rgba(110,168,254,.14), transparent 32rem),
+        radial-gradient(circle at 85% 10%, rgba(105,214,197,.10), transparent 28rem),
+        var(--bg);
+      font-family: Inter, "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.65;
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .wrap {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    header {
+      padding: 68px 0 36px;
+      border-bottom: 1px solid rgba(174,185,212,.15);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      color: var(--accent-2);
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      font-size: 13px;
+    }
+
+    h1 {
+      margin: 14px 0 16px;
+      font-size: clamp(34px, 5.8vw, 68px);
+      line-height: 1.08;
+      letter-spacing: -.04em;
+    }
+
+    .lead {
+      max-width: 920px;
+      color: var(--muted);
+      font-size: clamp(17px, 2vw, 22px);
+      margin: 0;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.3fr .7fr;
+      gap: 20px;
+      margin-top: 30px;
+    }
+
+    .hero-card, .card, .diagram, .note, .code-card {
+      background: linear-gradient(180deg, rgba(22,33,58,.92), rgba(15,23,48,.95));
+      border: 1px solid rgba(174,185,212,.16);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+    }
+
+    .hero-card {
+      padding: 24px;
+    }
+
+    .hero-card strong {
+      display: block;
+      font-size: 28px;
+      line-height: 1.3;
+      margin-bottom: 8px;
+    }
+
+    .hero-card p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .stat {
+      padding: 18px;
+      background: rgba(255,255,255,.035);
+      border: 1px solid rgba(174,185,212,.12);
+      border-radius: 16px;
+    }
+
+    .stat .n {
+      font-size: 30px;
+      font-weight: 800;
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+
+    .stat .l {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: rgba(11,16,32,.82);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid rgba(174,185,212,.12);
+    }
+
+    nav .wrap {
+      display: flex;
+      gap: 18px;
+      padding: 12px 0;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+
+    nav a {
+      color: var(--muted);
+      font-size: 14px;
+      padding: 6px 10px;
+      border-radius: 999px;
+    }
+
+    nav a:hover {
+      color: var(--text);
+      background: rgba(255,255,255,.06);
+      text-decoration: none;
+    }
+
+    main { padding: 36px 0 72px; }
+
+    section { margin: 0 0 48px; }
+
+    .section-head {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 20px;
+      margin-bottom: 18px;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: clamp(26px, 3vw, 38px);
+      letter-spacing: -.03em;
+    }
+
+    .section-head p {
+      margin: 0;
+      max-width: 650px;
+      color: var(--muted);
+    }
+
+    h3 { margin: 0 0 10px; font-size: 20px; }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 20px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .card {
+      padding: 22px;
+    }
+
+    .card p, .card li {
+      color: var(--muted);
+    }
+
+    .card ul {
+      margin: 10px 0 0;
+      padding-left: 20px;
+    }
+
+    .tag {
+      display: inline-block;
+      margin: 4px 4px 0 0;
+      padding: 5px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      border: 1px solid rgba(174,185,212,.16);
+      background: rgba(255,255,255,.04);
+      color: #d9e2ff;
+    }
+
+    .diagram {
+      padding: 20px;
+      overflow: auto;
+    }
+
+    .diagram-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 14px;
+    }
+
+    .diagram-title span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    svg {
+      width: 100%;
+      height: auto;
+      min-width: 780px;
+      display: block;
+    }
+
+    .flowbox { fill: #16213a; stroke: #48669f; stroke-width: 1.4; }
+    .flowbox.alt { fill: #13293a; stroke: #3b8b85; }
+    .flowbox.warn { fill: #36261c; stroke: #a97839; }
+    .flowbox.violet { fill: #211b3d; stroke: #705bb3; }
+    .flowbox.red { fill: #351c28; stroke: #9d4d6d; }
+    .flowtext { fill: #eef2ff; font-size: 14px; font-weight: 700; }
+    .flowsub { fill: #aeb9d4; font-size: 11.5px; }
+    .arrow { stroke: #7b91bd; stroke-width: 2; fill: none; marker-end: url(#arrowhead); }
+    .arrow.alt { stroke: #69d6c5; }
+    .arrow.warn { stroke: #f4bd67; }
+    .lane { fill: rgba(255,255,255,.025); stroke: #2a385d; }
+    .lane-label { fill: #aeb9d4; font-size: 12px; font-weight: 700; letter-spacing: .05em; }
+
+    .stack {
+      display: grid;
+      gap: 10px;
+    }
+
+    .stack-item {
+      display: grid;
+      grid-template-columns: 190px 1fr;
+      gap: 16px;
+      align-items: center;
+      padding: 14px 16px;
+      border: 1px solid rgba(174,185,212,.12);
+      border-radius: 14px;
+      background: rgba(255,255,255,.035);
+    }
+
+    .stack-item .name { font-weight: 800; }
+    .stack-item .desc { color: var(--muted); }
+    .stack-item .bar {
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.08);
+      overflow: hidden;
+      margin-top: 8px;
+    }
+    .stack-item .bar > i {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      overflow: hidden;
+      border-radius: 14px;
+      font-size: 14px;
+    }
+
+    th, td {
+      padding: 13px 14px;
+      text-align: left;
+      border-bottom: 1px solid rgba(174,185,212,.12);
+      vertical-align: top;
+    }
+
+    th {
+      color: #dce5ff;
+      background: rgba(255,255,255,.04);
+    }
+
+    td { color: var(--muted); }
+    tr:last-child td { border-bottom: none; }
+
+    code {
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      color: #dce5ff;
+      font-size: .92em;
+    }
+
+    pre {
+      margin: 0;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      color: #dce5ff;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .code-card {
+      padding: 18px;
+      overflow: auto;
+    }
+
+    .note {
+      padding: 18px 20px;
+      border-left: 4px solid var(--accent-3);
+    }
+
+    .note strong { color: #ffe0a9; }
+    .note p { margin: 4px 0 0; color: var(--muted); }
+
+    .split-callout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .good, .bad {
+      padding: 18px;
+      border-radius: 16px;
+      border: 1px solid rgba(174,185,212,.12);
+    }
+    .good { background: rgba(105,214,197,.07); }
+    .bad { background: rgba(255,143,143,.07); }
+    .good h3 { color: var(--ok); }
+    .bad h3 { color: var(--danger); }
+
+    footer {
+      padding: 28px 0 42px;
+      color: var(--muted);
+      border-top: 1px solid rgba(174,185,212,.12);
+      font-size: 14px;
+    }
+
+    .small { font-size: 13px; color: var(--muted); }
+
+    @media (max-width: 860px) {
+      .hero-grid, .grid-2, .grid-3, .split-callout { grid-template-columns: 1fr; }
+      .stack-item { grid-template-columns: 1fr; }
+      .section-head { align-items: flex-start; flex-direction: column; }
+    }
+
+    @media print {
+      body { background: #fff; color: #111; }
+      nav { display: none; }
+      .hero-card, .card, .diagram, .note, .code-card {
+        box-shadow: none;
+        border-color: #bbb;
+        background: #fff;
+      }
+      .lead, .card p, .card li, td, .small, footer, .section-head p { color: #444; }
+      h1, h2, h3, .flowtext { color: #111; }
+    }
+
+    .request-meta {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .request-meta .stat { min-height: 112px; }
+    .message-list {
+      display: grid;
+      grid-template-columns: 1fr 42px 1fr 42px 2.15fr;
+      gap: 10px;
+      align-items: stretch;
+    }
+    .message-box {
+      padding: 18px;
+      border-radius: 16px;
+      border: 1px solid rgba(174,185,212,.14);
+      background: rgba(255,255,255,.035);
+      min-height: 165px;
+    }
+    .message-box.system { border-color: rgba(183,156,255,.50); }
+    .message-box.user { border-color: rgba(110,168,254,.50); }
+    .message-box.prompt { border-color: rgba(105,214,197,.50); }
+    .message-box .role {
+      font-size: 12px;
+      letter-spacing: .08em;
+      font-weight: 800;
+      color: var(--muted);
+      margin-bottom: 9px;
+    }
+    .message-box .size {
+      font-size: 30px;
+      font-weight: 800;
+      line-height: 1;
+      margin-bottom: 12px;
+    }
+    .message-box p { margin: 0; color: var(--muted); font-size: 14px; }
+    .message-arrow {
+      display: grid;
+      place-items: center;
+      color: var(--accent);
+      font-size: 26px;
+    }
+    .composition-row {
+      display: grid;
+      grid-template-columns: 230px 1fr 90px;
+      align-items: center;
+      gap: 14px;
+      margin: 12px 0;
+    }
+    .composition-track {
+      height: 18px;
+      background: rgba(255,255,255,.07);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .composition-fill {
+      height: 100%;
+      min-width: 3px;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    }
+    details.raw-request {
+      border: 1px solid rgba(174,185,212,.14);
+      border-radius: 16px;
+      background: rgba(0,0,0,.14);
+      overflow: hidden;
+    }
+    details.raw-request summary {
+      padding: 16px 18px;
+      cursor: pointer;
+      font-weight: 800;
+      color: #dce5ff;
+      background: rgba(255,255,255,.035);
+    }
+    details.raw-request pre {
+      padding: 18px;
+      max-height: 680px;
+      overflow: auto;
+      font-size: 12px;
+    }
+    .diagnosis {
+      display: grid;
+      grid-template-columns: 150px 1fr 1fr;
+      gap: 1px;
+      background: rgba(174,185,212,.12);
+      border: 1px solid rgba(174,185,212,.12);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    .diagnosis > div {
+      padding: 13px 14px;
+      background: var(--panel-3);
+      color: var(--muted);
+    }
+    .diagnosis .head {
+      color: #dce5ff;
+      font-weight: 800;
+      background: rgba(255,255,255,.055);
+    }
+    @media (max-width: 860px) {
+      .request-meta { grid-template-columns: repeat(2, 1fr); }
+      .message-list { grid-template-columns: 1fr; }
+      .message-arrow { transform: rotate(90deg); min-height: 32px; }
+      .composition-row { grid-template-columns: 1fr; gap: 7px; }
+      .diagnosis { grid-template-columns: 1fr; }
+    }
+
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="eyebrow">Appless-Phone · Architecture Review</div>
+    <h1>Appless-Phone Repo<br>架构与运行链路介绍</h1>
+    <p class="lead">
+      这份页面用于介绍 Appless-Phone 的产品定位、主要模块、Agent 执行链路、A2UI 生成方式，
+      以及一次真实云端模型请求如何承载工具、Persona、Skill 和 Memory 上下文。
+    </p>
+
+    <div class="hero-grid">
+      <div class="hero-card">
+        <strong>自然语言 → ReAct 工具编排 → Provider 数据 → A2UI JSONL → 动态界面</strong>
+        <p>
+          LLM 通常不直接生成 A2UI 组件树；它主要选择工具、组织参数、判断串并行以及决定何时结束。
+          UI 描述主要由 ToolGatewayClient 和各领域 A2UI Builder 生成。
+        </p>
+      </div>
+      <div class="stat-grid">
+        <div class="stat"><div class="n">2</div><div class="l">核心 HarmonyOS 模块</div></div>
+        <div class="stat"><div class="n">4</div><div class="l">最大并行工具槽位</div></div>
+        <div class="stat"><div class="n">40+</div><div class="l">静态工具能力</div></div>
+        <div class="stat"><div class="n">2</div><div class="l">主要 UI 渲染路径</div></div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<nav>
+  <div class="wrap">
+    <a href="#overview">整体定位</a>
+    <a href="#architecture">架构图</a>
+    <a href="#sequence">请求时序</a>
+    <a href="#a2ui">A2UI 链路</a>
+    <a href="#prompt">Prompt 构成</a>
+    <a href="#actual-request">实际请求示例</a>
+    <a href="#responsibility">职责边界</a>
+    <a href="#files">关键文件</a>
+    <a href="#assessment">项目亮点</a>
+  </div>
+</nav>
+
+<main class="wrap">
+
+  <section id="overview">
+    <div class="section-head">
+      <div>
+        <h2>1. 项目整体定位</h2>
+      </div>
+      <p>Appless-Phone 更接近一个“AI Phone / Task-oriented Interface”原型，而不是传统的 App 启动器。</p>
+    </div>
+
+    <div class="grid-3">
+      <article class="card">
+        <h3>Agent 是入口</h3>
+        <p>用户通过自然语言描述目标，Agent 决定调用哪些工具，而不是要求用户逐个打开 App 完成流程。</p>
+        <span class="tag">ReAct</span>
+        <span class="tag">Tool Routing</span>
+        <span class="tag">Multi-step</span>
+      </article>
+      <article class="card">
+        <h3>App 变成工具</h3>
+        <p>高铁、航班、酒店、邮件、日历、地图、支付、社交等能力被抽象成固定或动态工具。</p>
+        <span class="tag">Provider Adapter</span>
+        <span class="tag">MCP</span>
+        <span class="tag">Composio</span>
+      </article>
+      <article class="card">
+        <h3>结果变成界面</h3>
+        <p>工具执行后返回业务数据，代码侧 Builder 生成 A2UI JSONL，再由原生 ArkUI 或 HTML Surface 渲染。</p>
+        <span class="tag">A2UI</span>
+        <span class="tag">JSONL</span>
+        <span class="tag">Dynamic Surface</span>
+      </article>
+    </div>
+  </section>
+
+  <section id="architecture">
+    <div class="section-head">
+      <div><h2>2. 整体架构图</h2></div>
+      <p>从用户输入到最终动态界面的主链路，以及 entry 与 agent_core 的职责分层。</p>
+    </div>
+
+    <div class="diagram">
+      <div class="diagram-title">
+        <strong>端到端数据流</strong>
+        <span>实线表示主要执行路径</span>
+      </div>
+      <svg viewBox="0 0 1120 530" role="img" aria-label="Appless Phone overall architecture">
+        <defs>
+          <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#7b91bd"></polygon>
+          </marker>
+        </defs>
+
+        <rect class="lane" x="10" y="40" width="1100" height="115" rx="18"></rect>
+        <text class="lane-label" x="30" y="68">ENTRY · UI / INTERACTION</text>
+
+        <rect class="lane" x="10" y="175" width="1100" height="165" rx="18"></rect>
+        <text class="lane-label" x="30" y="203">AGENT_CORE · AGENT / TOOL ORCHESTRATION</text>
+
+        <rect class="lane" x="10" y="360" width="1100" height="150" rx="18"></rect>
+        <text class="lane-label" x="30" y="388">PROVIDER + A2UI RUNTIME</text>
+
+        <rect class="flowbox alt" x="38" y="85" width="150" height="50" rx="12"></rect>
+        <text class="flowtext" x="113" y="106" text-anchor="middle">用户输入</text>
+        <text class="flowsub" x="113" y="124" text-anchor="middle">文本 / 语音 / UI Action</text>
+
+        <rect class="flowbox" x="235" y="85" width="175" height="50" rx="12"></rect>
+        <text class="flowtext" x="322" y="106" text-anchor="middle">A2uiHome / Index</text>
+        <text class="flowsub" x="322" y="124" text-anchor="middle">页面状态与交互协调</text>
+
+        <rect class="flowbox" x="458" y="85" width="175" height="50" rx="12"></rect>
+        <text class="flowtext" x="545" y="106" text-anchor="middle">LocalModelClient</text>
+        <text class="flowsub" x="545" y="124" text-anchor="middle">UI 与 Agent 桥接</text>
+
+        <rect class="flowbox violet" x="458" y="225" width="175" height="58" rx="12"></rect>
+        <text class="flowtext" x="545" y="247" text-anchor="middle">LoopBackend</text>
+        <text class="flowsub" x="545" y="266" text-anchor="middle">装配模型、工具与回调</text>
+
+        <rect class="flowbox violet" x="690" y="225" width="185" height="58" rx="12"></rect>
+        <text class="flowtext" x="782" y="247" text-anchor="middle">ReActAgentRunner</text>
+        <text class="flowsub" x="782" y="266" text-anchor="middle">Thought / Execution / Action</text>
+
+        <rect class="flowbox warn" x="925" y="225" width="155" height="58" rx="12"></rect>
+        <text class="flowtext" x="1002" y="247" text-anchor="middle">LLM</text>
+        <text class="flowsub" x="1002" y="266" text-anchor="middle">工具选择与参数生成</text>
+
+        <rect class="flowbox" x="210" y="225" width="175" height="58" rx="12"></rect>
+        <text class="flowtext" x="297" y="247" text-anchor="middle">ToolRegistry</text>
+        <text class="flowsub" x="297" y="266" text-anchor="middle">工具目录与风险描述</text>
+
+        <rect class="flowbox alt" x="155" y="405" width="210" height="60" rx="12"></rect>
+        <text class="flowtext" x="260" y="428" text-anchor="middle">AiphoneToolExecutor</text>
+        <text class="flowsub" x="260" y="448" text-anchor="middle">统一业务工具执行入口</text>
+
+        <rect class="flowbox alt" x="430" y="405" width="220" height="60" rx="12"></rect>
+        <text class="flowtext" x="540" y="428" text-anchor="middle">ToolGatewayClient</text>
+        <text class="flowsub" x="540" y="448" text-anchor="middle">Provider 适配与领域路由</text>
+
+        <rect class="flowbox alt" x="715" y="405" width="175" height="60" rx="12"></rect>
+        <text class="flowtext" x="802" y="428" text-anchor="middle">A2UI Builders</text>
+        <text class="flowsub" x="802" y="448" text-anchor="middle">生成 A2UI JSONL</text>
+
+        <rect class="flowbox" x="935" y="405" width="145" height="60" rx="12"></rect>
+        <text class="flowtext" x="1007" y="428" text-anchor="middle">Parser / Store</text>
+        <text class="flowsub" x="1007" y="448" text-anchor="middle">Surface State</text>
+
+        <path class="arrow" d="M188 110 L235 110"></path>
+        <path class="arrow" d="M410 110 L458 110"></path>
+        <path class="arrow" d="M545 135 L545 225"></path>
+        <path class="arrow" d="M633 254 L690 254"></path>
+        <path class="arrow warn" d="M875 254 L925 254"></path>
+        <path class="arrow warn" d="M925 278 C900 315, 860 320, 840 284"></path>
+        <path class="arrow" d="M690 254 L385 254"></path>
+        <path class="arrow alt" d="M297 283 C295 332, 270 355, 260 405"></path>
+        <path class="arrow alt" d="M365 435 L430 435"></path>
+        <path class="arrow alt" d="M650 435 L715 435"></path>
+        <path class="arrow" d="M890 435 L935 435"></path>
+        <path class="arrow" d="M1007 405 C1000 350, 790 335, 634 130"></path>
+      </svg>
+    </div>
+
+    <div class="grid-2" style="margin-top:20px;">
+      <article class="card">
+        <h3>entry 模块</h3>
+        <p>承担 HarmonyOS 页面、输入、语音、消息态、Surface 展示、支付 Overlay 和用户交互。</p>
+        <ul>
+          <li><code>A2uiHome/Index.ets</code></li>
+          <li><code>HomePage.ets</code></li>
+          <li><code>LocalModelClient.ets</code></li>
+          <li><code>HtmlHomeSurfaceView</code> / <code>A2uiSurfaceView</code></li>
+        </ul>
+      </article>
+      <article class="card">
+        <h3>agent_core 模块</h3>
+        <p>承担模型接入、ReAct 循环、ToolRegistry、Provider 网关、A2UI 协议解析、动态工具与技能系统。</p>
+        <ul>
+          <li><code>ReActAgentRunner.ets</code></li>
+          <li><code>LoopBackend.ets</code></li>
+          <li><code>ToolGatewayClient.ets</code></li>
+          <li><code>A2uiParser.ets</code> / <code>A2uiSurfaceStore.ets</code></li>
+        </ul>
+      </article>
+    </div>
+  </section>
+
+  <section id="sequence">
+    <div class="section-head">
+      <div><h2>3. 一次请求的时序</h2></div>
+      <p>以“查询明天深圳到上海的高铁”为例，展示 LLM、工具执行与 UI 更新之间的顺序关系。</p>
+    </div>
+
+    <div class="diagram">
+      <div class="diagram-title">
+        <strong>请求时序图</strong>
+        <span>LLM 不直接生成最终 TrainOptions UI</span>
+      </div>
+      <svg viewBox="0 0 1120 610" role="img" aria-label="Sequence diagram">
+        <defs>
+          <marker id="arrowhead2" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#7b91bd"></polygon>
+          </marker>
+        </defs>
+
+        <g fill="#eef2ff" font-size="13" font-weight="700">
+          <text x="90" y="35" text-anchor="middle">用户 / UI</text>
+          <text x="285" y="35" text-anchor="middle">LoopBackend</text>
+          <text x="480" y="35" text-anchor="middle">ReAct Runner</text>
+          <text x="670" y="35" text-anchor="middle">LLM</text>
+          <text x="860" y="35" text-anchor="middle">Tool Gateway</text>
+          <text x="1040" y="35" text-anchor="middle">A2UI Runtime</text>
+        </g>
+
+        <g stroke="#2a385d" stroke-dasharray="5 6">
+          <line x1="90" y1="55" x2="90" y2="570"></line>
+          <line x1="285" y1="55" x2="285" y2="570"></line>
+          <line x1="480" y1="55" x2="480" y2="570"></line>
+          <line x1="670" y1="55" x2="670" y2="570"></line>
+          <line x1="860" y1="55" x2="860" y2="570"></line>
+          <line x1="1040" y1="55" x2="1040" y2="570"></line>
+        </g>
+
+        <g stroke="#7b91bd" stroke-width="2" fill="none" marker-end="url(#arrowhead2)">
+          <line x1="90" y1="90" x2="285" y2="90"></line>
+          <line x1="285" y1="135" x2="480" y2="135"></line>
+          <line x1="480" y1="180" x2="670" y2="180"></line>
+          <line x1="670" y1="245" x2="480" y2="245"></line>
+          <line x1="480" y1="300" x2="860" y2="300"></line>
+          <line x1="860" y1="375" x2="1040" y2="375"></line>
+          <line x1="1040" y1="430" x2="285" y2="430"></line>
+          <line x1="285" y1="490" x2="90" y2="490"></line>
+        </g>
+
+        <g fill="#aeb9d4" font-size="12">
+          <text x="188" y="82" text-anchor="middle">原始任务 + 历史 + 配置</text>
+          <text x="382" y="127" text-anchor="middle">装配模型、工具、回调</text>
+          <text x="575" y="172" text-anchor="middle">完整 Prompt + messages</text>
+          <text x="575" y="225" text-anchor="middle">Thought / Execution / Action</text>
+          <text x="670" y="265" text-anchor="middle">train.search({...})</text>
+          <text x="670" y="292" text-anchor="middle">执行真实 Provider 查询</text>
+          <text x="950" y="367" text-anchor="middle">业务 Builder 生成 JSONL</text>
+          <text x="660" y="422" text-anchor="middle">Parser + Store 生成 SurfaceState</text>
+          <text x="188" y="482" text-anchor="middle">渲染 TrainOptions 界面</text>
+        </g>
+
+        <rect class="flowbox warn" x="585" y="195" width="170" height="56" rx="12"></rect>
+        <text class="flowtext" x="670" y="217" text-anchor="middle">LLM 输出</text>
+        <text class="flowsub" x="670" y="237" text-anchor="middle">Action: train.search({...})</text>
+
+        <rect class="flowbox alt" x="765" y="320" width="190" height="56" rx="12"></rect>
+        <text class="flowtext" x="860" y="342" text-anchor="middle">Provider + Builder</text>
+        <text class="flowsub" x="860" y="362" text-anchor="middle">数据 → A2UI JSONL</text>
+
+        <rect class="flowbox" x="940" y="390" width="170" height="56" rx="12"></rect>
+        <text class="flowtext" x="1025" y="412" text-anchor="middle">A2UI Surface</text>
+        <text class="flowsub" x="1025" y="432" text-anchor="middle">组件树 + DataModel</text>
+      </svg>
+    </div>
+  </section>
+
+  <section id="a2ui">
+    <div class="section-head">
+      <div><h2>4. A2UI 生成链路</h2></div>
+      <p>UI 的“描述”主要来自工具执行层，而不是主 LLM 的自然语言输出。</p>
+    </div>
+
+    <div class="diagram">
+      <div class="diagram-title">
+        <strong>A2UI 数据管线</strong>
+        <span>从业务结果到最终可见界面</span>
+      </div>
+      <svg viewBox="0 0 1120 300" role="img" aria-label="A2UI pipeline">
+        <defs>
+          <marker id="arrowhead3" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#69d6c5"></polygon>
+          </marker>
+        </defs>
+
+        <g stroke="#69d6c5" stroke-width="2.2" fill="none" marker-end="url(#arrowhead3)">
+          <line x1="180" y1="140" x2="245" y2="140"></line>
+          <line x1="415" y1="140" x2="480" y2="140"></line>
+          <line x1="650" y1="140" x2="715" y2="140"></line>
+          <line x1="885" y1="140" x2="950" y2="140"></line>
+        </g>
+
+        <rect class="flowbox warn" x="30" y="95" width="150" height="90" rx="16"></rect>
+        <text class="flowtext" x="105" y="120" text-anchor="middle">Tool Result</text>
+        <text class="flowsub" x="105" y="145" text-anchor="middle">高铁 / 邮件 / 地图</text>
+        <text class="flowsub" x="105" y="164" text-anchor="middle">真实业务数据</text>
+
+        <rect class="flowbox alt" x="245" y="95" width="170" height="90" rx="16"></rect>
+        <text class="flowtext" x="330" y="120" text-anchor="middle">领域 Builder</text>
+        <text class="flowsub" x="330" y="145" text-anchor="middle">TrainOptions / Mail</text>
+        <text class="flowsub" x="330" y="164" text-anchor="middle">Payment / Social...</text>
+
+        <rect class="flowbox alt" x="480" y="95" width="170" height="90" rx="16"></rect>
+        <text class="flowtext" x="565" y="120" text-anchor="middle">A2UI JSONL</text>
+        <text class="flowsub" x="565" y="145" text-anchor="middle">createSurface</text>
+        <text class="flowsub" x="565" y="164" text-anchor="middle">updateComponents / Data</text>
+
+        <rect class="flowbox" x="715" y="95" width="170" height="90" rx="16"></rect>
+        <text class="flowtext" x="800" y="120" text-anchor="middle">Parser + Store</text>
+        <text class="flowsub" x="800" y="145" text-anchor="middle">Envelope 校验</text>
+        <text class="flowsub" x="800" y="164" text-anchor="middle">合并 SurfaceState</text>
+
+        <rect class="flowbox violet" x="950" y="95" width="140" height="90" rx="16"></rect>
+        <text class="flowtext" x="1020" y="120" text-anchor="middle">Renderer</text>
+        <text class="flowsub" x="1020" y="145" text-anchor="middle">ArkUI</text>
+        <text class="flowsub" x="1020" y="164" text-anchor="middle">或 HTML Surface</text>
+      </svg>
+    </div>
+
+    <div class="split-callout" style="margin-top:20px;">
+      <div class="good">
+        <h3>当前实际行为</h3>
+        <p>LLM 输出工具调用计划；工具和预定义 Builder 生成 A2UI 描述；Runtime 负责解析并渲染。</p>
+      </div>
+      <div class="bad">
+        <h3>不是当前主链路</h3>
+        <p>LLM 自由生成任意 UI DSL / 组件树，再由通用渲染器直接解释并生成完整 UI。</p>
+      </div>
+    </div>
+
+    <div class="grid-2" style="margin-top:20px;">
+      <article class="card">
+        <h3>原生渲染路径</h3>
+        <p><code>A2uiSurfaceState → A2uiSurfaceView</code></p>
+        <p>适用于 SocialHub 等需要更强原生交互的 Surface。</p>
+      </article>
+      <article class="card">
+        <h3>HTML 渲染路径</h3>
+        <p><code>A2uiSurfaceState → HTML Document → HtmlHomeSurfaceView</code></p>
+        <p>多数业务结果通过 HTML Surface 呈现。</p>
+      </article>
+    </div>
+  </section>
+
+  <section id="prompt">
+    <div class="section-head">
+      <div><h2>5. 输入给 LLM 的 Prompt 构成</h2></div>
+      <p>实际调用使用 OpenAI-compatible messages 数组，最后一个 user message 内嵌完整 Agent Prompt。</p>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3>Chat messages 外层结构</h3>
+        <div class="code-card">
+<pre>[
+  {
+    "role": "system",
+    "content": "Loop 身份 + ReAct 输出协议 + Skills"
+  },
+  ...历史 user / assistant messages,
+  {
+    "role": "user",
+    "content": "Runner 构造的完整工具路由 Prompt"
+  }
+]</pre>
+        </div>
+      </div>
+      <div class="card">
+        <h3>模型请求参数</h3>
+        <table>
+          <tr><th>字段</th><th>值 / 作用</th></tr>
+          <tr><td><code>model</code></td><td>由 LlmProvider 配置</td></tr>
+          <tr><td><code>temperature</code></td><td>0.2，偏确定性</td></tr>
+          <tr><td><code>stream</code></td><td>true，SSE 流式响应</td></tr>
+          <tr><td><code>messages</code></td><td>System + History + 当前 Agent Prompt</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:20px;">
+      <h3>Runner Prompt 的主要组成</h3>
+      <table>
+        <thead>
+          <tr><th>组成部分</th><th>在 Agent 中的作用</th><th>示例</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>运行时上下文</td>
+            <td>提供设备当前时间等环境信息，帮助模型解析“今天、明天、下周”等表达。</td>
+            <td><code>Current device local datetime</code></td>
+          </tr>
+          <tr>
+            <td>ReAct 协议</td>
+            <td>规定模型使用 Thought、Execution、Action 或 Final 表达下一步。</td>
+            <td><code>Action: train.search({...})</code></td>
+          </tr>
+          <tr>
+            <td>工具目录</td>
+            <td>告诉模型当前可用的业务能力、参数格式、风险等级和适用场景。</td>
+            <td>train、flight、mail、calendar、maps</td>
+          </tr>
+          <tr>
+            <td>Persona / Skill / Memory</td>
+            <td>让同一个 Agent 以不同角色处理任务，并带入领域规则与长期偏好。</td>
+            <td>旅行搭子、Travel Planning、出行偏好</td>
+          </tr>
+          <tr>
+            <td>当前用户任务</td>
+            <td>描述本轮要完成的目标，是工具路由的直接输入。</td>
+            <td>查询明天深圳到上海的高铁</td>
+          </tr>
+          <tr>
+            <td>ReAct Scratchpad</td>
+            <td>在多步任务中保存前面步骤的模型输出和工具 Observation。</td>
+            <td>Thought → Action → Observation</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="diagram" style="margin-top:20px;">
+      <div class="diagram-title">
+        <strong>Prompt 装配图</strong>
+        <span>每一轮 ReAct 都会重新构造</span>
+      </div>
+      <svg viewBox="0 0 1120 420" role="img" aria-label="Prompt assembly">
+        <defs>
+          <marker id="arrowhead4" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#7b91bd"></polygon>
+          </marker>
+        </defs>
+
+        <rect class="flowbox violet" x="30" y="40" width="250" height="72" rx="14"></rect>
+        <text class="flowtext" x="155" y="67" text-anchor="middle">System Prompt</text>
+        <text class="flowsub" x="155" y="89" text-anchor="middle">身份 + ReAct 格式 + Skills</text>
+
+        <rect class="flowbox" x="30" y="140" width="250" height="72" rx="14"></rect>
+        <text class="flowtext" x="155" y="167" text-anchor="middle">History Messages</text>
+        <text class="flowsub" x="155" y="189" text-anchor="middle">标准 role=user / assistant</text>
+
+        <rect class="flowbox alt" x="30" y="240" width="250" height="112" rx="14"></rect>
+        <text class="flowtext" x="155" y="267" text-anchor="middle">Runner User Prompt</text>
+        <text class="flowsub" x="155" y="291" text-anchor="middle">时间 + 规则 + Tools</text>
+        <text class="flowsub" x="155" y="312" text-anchor="middle">User task + Scratchpad</text>
+        <text class="flowsub" x="155" y="333" text-anchor="middle">可能含历史文本副本</text>
+
+        <rect class="flowbox warn" x="440" y="120" width="240" height="150" rx="18"></rect>
+        <text class="flowtext" x="560" y="154" text-anchor="middle">OpenAI-compatible Request</text>
+        <text class="flowsub" x="560" y="183" text-anchor="middle">messages[]</text>
+        <text class="flowsub" x="560" y="207" text-anchor="middle">temperature = 0.2</text>
+        <text class="flowsub" x="560" y="231" text-anchor="middle">stream = true</text>
+
+        <rect class="flowbox warn" x="840" y="120" width="240" height="150" rx="18"></rect>
+        <text class="flowtext" x="960" y="154" text-anchor="middle">LLM Response</text>
+        <text class="flowsub" x="960" y="183" text-anchor="middle">Thought:</text>
+        <text class="flowsub" x="960" y="207" text-anchor="middle">Execution: serial / parallel</text>
+        <text class="flowsub" x="960" y="231" text-anchor="middle">Action: ... 或 Final: ...</text>
+
+        <g class="arrow">
+          <path d="M280 76 C340 76, 360 130, 440 160"></path>
+          <path d="M280 176 L440 190"></path>
+          <path d="M280 296 C350 296, 360 250, 440 225"></path>
+          <path d="M680 195 L840 195"></path>
+        </g>
+      </svg>
+    </div>
+
+    <div class="note" style="margin-top:20px;">
+      <strong>Prompt 在这里扮演的是“工具编排协议”。</strong>
+      <p>
+        它的目标是让模型理解当前环境、选择合适工具并生成结构化参数；
+        最终业务界面仍由工具结果和 A2UI Builder 共同生成。
+      </p>
+    </div>
+  </section>
+
+
+  <section id="actual-request">
+    <div class="section-head">
+      <div><h2>6. 实际云端模型请求示例</h2></div>
+      <p>下面用一次“查询明天深圳到上海的高铁”的真实请求，说明运行时如何把用户任务、工具能力和角色上下文组织后发送给模型。</p>
+    </div>
+
+    <div class="grid-2">
+      <article class="card">
+        <h3>请求配置</h3>
+        <table>
+          <tbody>
+            <tr><th>模型</th><td><code>deepseek-v4-flash</code></td></tr>
+            <tr><th>响应方式</th><td>流式返回（<code>stream: true</code>）</td></tr>
+            <tr><th>Temperature</th><td><code>0.2</code>，偏向稳定的结构化输出</td></tr>
+            <tr><th>Thinking 配置</th><td><code>disabled</code></td></tr>
+          </tbody>
+        </table>
+      </article>
+      <article class="card">
+        <h3>这次请求要完成什么</h3>
+        <p>用户目标是查询第二天从深圳到上海的高铁。Agent 需要：</p>
+        <ul>
+          <li>根据设备时间把“明天”解析为具体日期；</li>
+          <li>识别这是铁路出行场景；</li>
+          <li>选择 <code>train.search</code>；</li>
+          <li>生成结构化查询参数；</li>
+          <li>把工具结果交给 A2UI 链路展示。</li>
+        </ul>
+      </article>
+    </div>
+
+    <div class="card" style="margin-top:20px;">
+      <h3>messages 结构</h3>
+      <div class="message-list">
+        <div class="message-box system">
+          <div class="role">SYSTEM</div>
+          <p>定义 Loop 的 Agent 身份和 ReAct 输出约定，要求模型只使用给定工具。</p>
+        </div>
+        <div class="message-arrow">→</div>
+        <div class="message-box user">
+          <div class="role">USER TASK</div>
+          <p><code>查询明天深圳到上海的高铁</code></p>
+        </div>
+        <div class="message-arrow">→</div>
+        <div class="message-box prompt">
+          <div class="role">RUNTIME AGENT CONTEXT</div>
+          <p>注入设备时间、工具目录、旅行 Persona、Skill、Memory、调用规则以及当前任务。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="diagram" style="margin-top:20px;">
+      <div class="diagram-title">
+        <strong>真实请求中的上下文组成</strong>
+        <span>展示信息类别，不表示字符或 token 占比</span>
+      </div>
+      <svg viewBox="0 0 1120 330" role="img" aria-label="Actual request context layers">
+        <defs>
+          <marker id="arrowhead5" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#7b91bd"></polygon>
+          </marker>
+        </defs>
+
+        <rect class="flowbox violet" x="35" y="105" width="165" height="90" rx="16"></rect>
+        <text class="flowtext" x="117" y="132" text-anchor="middle">Agent 身份</text>
+        <text class="flowsub" x="117" y="157" text-anchor="middle">Loop / ReAct</text>
+        <text class="flowsub" x="117" y="177" text-anchor="middle">输出协议</text>
+
+        <rect class="flowbox" x="260" y="105" width="165" height="90" rx="16"></rect>
+        <text class="flowtext" x="342" y="132" text-anchor="middle">运行时环境</text>
+        <text class="flowsub" x="342" y="157" text-anchor="middle">设备时间</text>
+        <text class="flowsub" x="342" y="177" text-anchor="middle">历史上下文</text>
+
+        <rect class="flowbox alt" x="485" y="105" width="165" height="90" rx="16"></rect>
+        <text class="flowtext" x="567" y="132" text-anchor="middle">工具能力</text>
+        <text class="flowsub" x="567" y="157" text-anchor="middle">train.search</text>
+        <text class="flowsub" x="567" y="177" text-anchor="middle">及其他工具说明</text>
+
+        <rect class="flowbox warn" x="710" y="105" width="165" height="90" rx="16"></rect>
+        <text class="flowtext" x="792" y="132" text-anchor="middle">角色上下文</text>
+        <text class="flowsub" x="792" y="157" text-anchor="middle">旅行搭子</text>
+        <text class="flowsub" x="792" y="177" text-anchor="middle">Skill / Memory</text>
+
+        <rect class="flowbox red" x="935" y="105" width="150" height="90" rx="16"></rect>
+        <text class="flowtext" x="1010" y="132" text-anchor="middle">当前任务</text>
+        <text class="flowsub" x="1010" y="157" text-anchor="middle">深圳 → 上海</text>
+        <text class="flowsub" x="1010" y="177" text-anchor="middle">明天 / 高铁</text>
+
+        <g stroke="#7b91bd" stroke-width="2" fill="none" marker-end="url(#arrowhead5)">
+          <line x1="200" y1="150" x2="260" y2="150"></line>
+          <line x1="425" y1="150" x2="485" y2="150"></line>
+          <line x1="650" y1="150" x2="710" y2="150"></line>
+          <line x1="875" y1="150" x2="935" y2="150"></line>
+        </g>
+
+        <rect class="flowbox alt" x="410" y="245" width="300" height="55" rx="14"></rect>
+        <text class="flowtext" x="560" y="268" text-anchor="middle">模型选择 train.search 并生成参数</text>
+        <text class="flowsub" x="560" y="288" text-anchor="middle">之后由工具层查询并生成 A2UI 结果</text>
+
+        <path class="arrow alt" d="M1010 195 C1000 232, 780 264, 710 271"></path>
+      </svg>
+    </div>
+
+    <div class="grid-2" style="margin-top:20px;">
+      <article class="card">
+        <h3>旅行 Persona</h3>
+        <p>
+          实际请求中激活了“旅行搭子”角色。它负责路线比较、交通方式选择、出行节奏和用户偏好，
+          并要求实时班次、票价和余票必须来自工具。
+        </p>
+      </article>
+      <article class="card">
+        <h3>Travel Planning Skill</h3>
+        <p>
+          Skill 进一步规定火车请求使用 <code>train.search</code>、航班请求使用
+          <code>flight.search</code>，并按耗时、换乘、价格和偏好组织结果。
+        </p>
+      </article>
+    </div>
+
+    <div class="card" style="margin-top:20px;">
+      <h3>真实请求的精简片段</h3>
+      <p class="small">为便于演示，仅保留结构性字段和代表性内容。</p>
+      <div class="code-card">
+<pre>{
+  "model": "deepseek-v4-flash",
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are Loop, a concise ReAct agent on HarmonyOS..."
+    },
+    {
+      "role": "user",
+      "content": "查询明天深圳到上海的高铁"
+    },
+    {
+      "role": "user",
+      "content": "Current device local datetime: 2026-07-24T11:23:41+08:00...
+Tools:
+- train.search: railway / high-speed rail search...
+Persona: 旅行搭子
+Active skill: Travel Planning
+Memory: 优先少换乘和可控时间
+User task: 查询明天深圳到上海的高铁"
+    }
+  ],
+  "temperature": 0.2,
+  "stream": true,
+  "thinking": { "type": "disabled" }
+}</pre>
+      </div>
+    </div>
+
+    <div class="note" style="margin-top:20px;">
+      <strong>这个真实请求再次说明了项目的核心分工。</strong>
+      <p>
+        云端模型接收的是 Agent 和工具路由上下文，预期输出 <code>train.search(...)</code> 一类 Action；
+        TrainOptions 等可见界面仍由工具执行结果和 A2UI Builder 生成。
+      </p>
+    </div>
+  </section>
+
+
+  <section id="responsibility">
+    <div class="section-head">
+      <div><h2>7. LLM 与代码的职责边界</h2></div>
+      <p>区分“生成工具调用计划”和“生成最终 UI 描述”，有助于准确理解项目的 generative interface 含义。</p>
+    </div>
+
+    <div class="diagram">
+      <div class="diagram-title">
+        <strong>职责分工矩阵</strong>
+        <span>✓ 主要负责 · ○ 辅助参与 · — 通常不负责</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>职责</th>
+            <th>LLM</th>
+            <th>ReAct Runner</th>
+            <th>Tool / Gateway</th>
+            <th>A2UI Builder</th>
+            <th>Renderer</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>理解自然语言意图</td><td>✓</td><td>○</td><td>—</td><td>—</td><td>—</td></tr>
+          <tr><td>选择工具与组织参数</td><td>✓</td><td>○</td><td>—</td><td>—</td><td>—</td></tr>
+          <tr><td>决定串行或并行</td><td>✓</td><td>✓ 校验</td><td>—</td><td>—</td><td>—</td></tr>
+          <tr><td>执行 Provider 查询</td><td>—</td><td>—</td><td>✓</td><td>—</td><td>—</td></tr>
+          <tr><td>生成 A2UI JSONL</td><td>—</td><td>—</td><td>○</td><td>✓</td><td>—</td></tr>
+          <tr><td>合并 Surface 状态</td><td>—</td><td>—</td><td>—</td><td>—</td><td>✓ Runtime</td></tr>
+          <tr><td>渲染 ArkUI / HTML</td><td>—</td><td>—</td><td>—</td><td>—</td><td>✓</td></tr>
+          <tr><td>控制确认与不可逆操作</td><td>○ Prompt 约束</td><td>○</td><td>✓ 应强制</td><td>○</td><td>○ 交互确认</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="grid-3" style="margin-top:20px;">
+      <article class="card">
+        <h3>LLM-driven</h3>
+        <p>工具选择、参数推断、上下文理解、多任务拆分、最终文本总结。</p>
+      </article>
+      <article class="card">
+        <h3>Template-driven</h3>
+        <p>TrainOptions、Mail、Hotel、Payment、Social 等组件结构和字段映射。</p>
+      </article>
+      <article class="card">
+        <h3>Runtime-driven</h3>
+        <p>JSONL 解析、协议校验、数据合并、Surface 生命周期和最终渲染。</p>
+      </article>
+    </div>
+  </section>
+
+  <section id="files">
+    <div class="section-head">
+      <div><h2>8. 关键组件与文件</h2></div>
+      <p>按职责划分核心文件，便于在演示中说明各模块如何协作，也方便听众继续阅读源码。</p>
+    </div>
+
+    <div class="card">
+      <table>
+        <thead>
+          <tr>
+            <th>层级</th>
+            <th>关键文件 / 组件</th>
+            <th>职责</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>页面入口</td>
+            <td><code>entry/src/main/ets/pages/A2uiHome/Index.ets</code></td>
+            <td>页面总协调器，管理模型配置、Surface、消息、语音、支付和 Persona 状态。</td>
+          </tr>
+          <tr>
+            <td>UI-Agent 桥接</td>
+            <td><code>LocalModelClient.ets</code></td>
+            <td>构造 LoopBackendRequest，接收 Agent 事件和 A2UI JSONL，并更新 SurfaceStore。</td>
+          </tr>
+          <tr>
+            <td>Agent 装配</td>
+            <td><code>LoopBackend.ets</code></td>
+            <td>构建模型、ConversationContext、ToolRegistry 与批处理宿主。</td>
+          </tr>
+          <tr>
+            <td>ReAct 循环</td>
+            <td><code>ReActAgentRunner.ets</code></td>
+            <td>构造 Prompt、调用模型、解析 Action、执行工具、维护 scratchpad。</td>
+          </tr>
+          <tr>
+            <td>模型接入</td>
+            <td><code>OpenAiCompatibleModel.ets</code></td>
+            <td>OpenAI-compatible Chat Completions、SSE 流式读取、messages 构造。</td>
+          </tr>
+          <tr>
+            <td>无 Key fallback</td>
+            <td><code>ScriptedLocalModel.ets</code></td>
+            <td>无云端模型配置时使用的确定性脚本模型，用于基础流程和演示回退。</td>
+          </tr>
+          <tr>
+            <td>工具目录</td>
+            <td><code>ToolRegistry.ets</code></td>
+            <td>注册工具、描述工具、标记并行安全工具和执行工具。</td>
+          </tr>
+          <tr>
+            <td>业务工具入口</td>
+            <td><code>AiphoneToolExecutor.ets</code></td>
+            <td>统一调用 ToolGateway，并返回原始 A2UI JSONL。</td>
+          </tr>
+          <tr>
+            <td>Provider 网关</td>
+            <td><code>ToolGatewayClient.ets</code></td>
+            <td>连接邮件、日历、地图、支付、社交、酒店、媒体、MCP 等外部能力。</td>
+          </tr>
+          <tr>
+            <td>A2UI 协议</td>
+            <td><code>A2uiParser.ets</code></td>
+            <td>解析 createSurface、updateComponents、updateDataModel、deleteSurface。</td>
+          </tr>
+          <tr>
+            <td>A2UI 状态</td>
+            <td><code>A2uiSurfaceStore.ets</code></td>
+            <td>合并 DataModel 和组件状态，形成最终 A2uiSurfaceState。</td>
+          </tr>
+          <tr>
+            <td>最终渲染</td>
+            <td><code>A2uiSurfaceView</code> / <code>HtmlHomeSurfaceView</code></td>
+            <td>分别负责原生 ArkUI 和 HTML Surface 展示。</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="assessment">
+    <div class="section-head">
+      <div><h2>9. 项目特点与演示重点</h2></div>
+      <p>这一 Repo 的价值在于把 Agent 编排、真实工具调用和动态任务界面放在同一个 HarmonyOS 应用中展示。</p>
+    </div>
+
+    <div class="grid-3">
+      <article class="card">
+        <h3>Agent-first 交互</h3>
+        <p>用户不需要先判断应该打开哪个 App，而是直接描述目标，由 Agent 负责选择能力和组织步骤。</p>
+      </article>
+      <article class="card">
+        <h3>工具化应用能力</h3>
+        <p>旅行、邮件、日历、地图、支付、媒体和社交能力都以工具形式接入统一的 ReAct 循环。</p>
+      </article>
+      <article class="card">
+        <h3>任务型动态界面</h3>
+        <p>界面围绕当前任务和数据生成，能够展示列表、卡片、确认流程和多任务聚合结果。</p>
+      </article>
+    </div>
+
+    <div class="grid-2" style="margin-top:20px;">
+      <article class="card">
+        <h3>适合重点演示的能力</h3>
+        <ul>
+          <li>自然语言触发高铁、航班、酒店或附近餐饮查询；</li>
+          <li>多工具串行与并行执行；</li>
+          <li>Persona、Skill 与 Memory 对工具路由的影响；</li>
+          <li>A2UI JSONL 驱动的渐进式 Surface 更新；</li>
+          <li>支付、发送、删除等动作的确认界面。</li>
+        </ul>
+      </article>
+      <article class="card">
+        <h3>适合作为参考的技术主题</h3>
+        <ul>
+          <li>HarmonyOS Stage 模型下的 Agent 应用组织方式；</li>
+          <li>OpenAI-compatible 模型接入与 SSE 流式响应；</li>
+          <li>工具注册、风险标注和 Provider Adapter；</li>
+          <li>业务数据到动态 UI 协议的转换；</li>
+          <li>MCP、Composio 和固定工具共存的能力体系。</li>
+        </ul>
+      </article>
+    </div>
+
+    <div class="diagram" style="margin-top:20px;">
+      <div class="diagram-title">
+        <strong>推荐的演示叙事</strong>
+        <span>从用户体验逐步进入技术实现</span>
+      </div>
+      <svg viewBox="0 0 1120 245" role="img" aria-label="Recommended presentation flow">
+        <defs>
+          <marker id="arrowhead6" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#69d6c5"></polygon>
+          </marker>
+        </defs>
+
+        <rect class="flowbox alt" x="35" y="80" width="175" height="80" rx="16"></rect>
+        <text class="flowtext" x="122" y="108" text-anchor="middle">1. 用户目标</text>
+        <text class="flowsub" x="122" y="135" text-anchor="middle">一句自然语言任务</text>
+
+        <rect class="flowbox violet" x="260" y="80" width="175" height="80" rx="16"></rect>
+        <text class="flowtext" x="347" y="108" text-anchor="middle">2. Agent 决策</text>
+        <text class="flowsub" x="347" y="135" text-anchor="middle">Prompt / ReAct / Tool</text>
+
+        <rect class="flowbox warn" x="485" y="80" width="175" height="80" rx="16"></rect>
+        <text class="flowtext" x="572" y="108" text-anchor="middle">3. 真实能力</text>
+        <text class="flowsub" x="572" y="135" text-anchor="middle">Provider / MCP / SaaS</text>
+
+        <rect class="flowbox" x="710" y="80" width="175" height="80" rx="16"></rect>
+        <text class="flowtext" x="797" y="108" text-anchor="middle">4. A2UI</text>
+        <text class="flowsub" x="797" y="135" text-anchor="middle">JSONL / Surface State</text>
+
+        <rect class="flowbox red" x="935" y="80" width="150" height="80" rx="16"></rect>
+        <text class="flowtext" x="1010" y="108" text-anchor="middle">5. 动态界面</text>
+        <text class="flowsub" x="1010" y="135" text-anchor="middle">结果与确认交互</text>
+
+        <g stroke="#69d6c5" stroke-width="2.2" fill="none" marker-end="url(#arrowhead6)">
+          <line x1="210" y1="120" x2="260" y2="120"></line>
+          <line x1="435" y1="120" x2="485" y2="120"></line>
+          <line x1="660" y1="120" x2="710" y2="120"></line>
+          <line x1="885" y1="120" x2="935" y2="120"></line>
+        </g>
+      </svg>
+    </div>
+  </section>
+
+  <section>
+    <div class="note">
+      <strong>一句话总结</strong>
+      <p>
+        Appless-Phone 的核心不是“LLM 直接生成任意 UI”，而是
+        “LLM 生成工具调用计划，业务工具返回真实数据，预定义 A2UI Builder 将数据转成动态任务界面”。
+      </p>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <div>基于对 <a href="https://github.com/XiaoLuoLYG/Appless-Phone">XiaoLuoLYG/Appless-Phone</a> 源码结构的整理。</div>
+    <div class="small">本页面为单文件 HTML，可直接离线打开并用于 Repo 架构介绍。实际请求示例来自用户提供的云端模型请求内容，并已做演示化精简。</div>
+  </div>
+</footer>
+</body>
+</html>
