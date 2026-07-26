@@ -1,0 +1,8 @@
+{
+  "enabled": true,
+  "httpPort": 18080,
+  "reversePort": 18081,
+  "authToken": "lite_proxy",
+  "requestTimeoutMs": 120000,
+  "maxBodyBytes": 4194304
+}

@@ -1,0 +1,11 @@
+{
+  "name": "@appless/lite-proxy",
+  "version": "1.0.0",
+  "description": "Reusable loopback HTTP to reverse-TCP proxy for HarmonyOS local models.",
+  "main": "Index.ets",
+  "author": "",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "liblite_proxy.so": "file:./src/main/cpp/types/liblite_proxy"
+  }
+}

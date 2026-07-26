@@ -6,6 +6,7 @@
   "author": "XiaoLuoLYG",
   "license": "UNLICENSED",
   "dependencies": {
+    "@appless/lite-proxy": "file:../lite_proxy",
     "@loop/agent-core": "file:../agent_core",
     "libentry.so": "file:./src/main/cpp/types/libentry"
   }

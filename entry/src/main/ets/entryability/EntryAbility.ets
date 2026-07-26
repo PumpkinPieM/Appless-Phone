@@ -16,10 +16,12 @@ import {
   localProviderConfigDebugSummary,
   xOAuthConfigFromProvider
 } from '@loop/agent-core';
+import { LiteProxy, LiteProxyOptions, LiteProxyStatus } from '@appless/lite-proxy';
 import { configurePersonaStoreFromRaw } from '../model/PersonaStore';
 
 const DOMAIN = 0x0000;
 const LOCAL_PROVIDER_CONFIG_RAWFILE = 'aiphone_provider_config.json';
+const LITE_PROXY_CONFIG_RAWFILE = 'lite_proxy_config.json';
 const COMPOSIO_CONFIG_RAWFILE = 'composio_config.json';
 const PERSONA_MANIFEST_RAWFILE = 'personas/personas.json';
 const PERSONA_IDS: string[] = [
@@ -55,6 +57,15 @@ const X_OAUTH_URI_HINTS: string[] = [
 const COMPOSIO_CALLBACK_URI_HINTS: string[] = [
   'aiphone://composio/callback'
 ];
+
+interface LiteProxyRawConfig {
+  enabled?: boolean;
+  httpPort?: number;
+  reversePort?: number;
+  authToken?: string;
+  requestTimeoutMs?: number;
+  maxBodyBytes?: number;
+}
 
 function hasUriHint(uri: string, hints: string[]): boolean {
   for (let index = 0; index < hints.length; index++) {
@@ -197,13 +208,18 @@ function oauthUriFromWant(want: Want): string {
 }
 
 export default class EntryAbility extends UIAbility {
+  private liteProxyConfig: LiteProxyRawConfig | null = null;
+  private liteProxyActive: boolean = false;
+
   onCreate(want: Want, launchParam: AbilityConstant.LaunchParam): void {
     try {
       this.context.getApplicationContext().setColorMode(ConfigurationConstant.ColorMode.COLOR_MODE_NOT_SET);
     } catch (err) {
       hilog.error(DOMAIN, 'testTag', 'Failed to set colorMode. Cause: %{public}s', JSON.stringify(err));
     }
-    this.loadLocalProviderConfig();
+    this.liteProxyConfig = this.loadLiteProxyConfig();
+    this.startLiteProxy(this.liteProxyConfig);
+    this.loadLocalProviderConfig(this.liteProxyConfig);
     this.loadComposioConfig();
     this.loadPersonaPacks();
     this.handleOAuthWant(want);
@@ -224,9 +240,74 @@ export default class EntryAbility extends UIAbility {
     }
   }
 
-  private loadLocalProviderConfig(): void {
+  private loadLiteProxyConfig(): LiteProxyRawConfig | null {
+    const rawJson = this.optionalRawfileText(LITE_PROXY_CONFIG_RAWFILE);
+    if (rawJson.trim().length === 0) {
+      return null;
+    }
     try {
-      const rawJson = this.rawfileText(LOCAL_PROVIDER_CONFIG_RAWFILE);
+      const config = JSON.parse(rawJson) as LiteProxyRawConfig;
+      if (config.enabled !== true) {
+        return null;
+      }
+      const httpPort = config.httpPort ?? 0;
+      const reversePort = config.reversePort ?? 0;
+      const authToken = config.authToken ?? '';
+      if (!Number.isInteger(httpPort) || httpPort < 1 || httpPort > 65535) {
+        throw new Error('httpPort must be an integer between 1 and 65535.');
+      }
+      if (!Number.isInteger(reversePort) || reversePort < 1 || reversePort > 65535) {
+        throw new Error('reversePort must be an integer between 1 and 65535.');
+      }
+      if (authToken.trim().length < 16) {
+        throw new Error('authToken must contain at least 16 characters.');
+      }
+      return config;
+    } catch (err) {
+      hilog.error(DOMAIN, 'testTag', 'Invalid %{public}s. Cause: %{public}s',
+        LITE_PROXY_CONFIG_RAWFILE, JSON.stringify(err));
+      return null;
+    }
+  }
+
+  private startLiteProxy(config: LiteProxyRawConfig | null): void {
+    if (config === null) {
+      return;
+    }
+    const options: LiteProxyOptions = {
+      httpPort: config.httpPort ?? 0,
+      reversePort: config.reversePort ?? 0,
+      authToken: config.authToken ?? '',
+      requestTimeoutMs: config.requestTimeoutMs ?? 120000,
+      maxBodyBytes: config.maxBodyBytes ?? 4 * 1024 * 1024
+    };
+    this.liteProxyActive = true;
+    LiteProxy.start(options)
+      .then((status: LiteProxyStatus) => {
+        hilog.info(DOMAIN, 'testTag',
+          'Lite proxy started. httpPort=%{public}d reversePort=%{public}d state=%{public}s',
+          status.httpPort, status.reversePort, status.state);
+      })
+      .catch((err: Error | Object | string | number | boolean | null | undefined) => {
+        this.liteProxyActive = false;
+        hilog.error(DOMAIN, 'testTag', 'Lite proxy failed to start. Cause: %{public}s', describeError(err));
+      });
+  }
+
+  private providerConfigForProxy(rawJson: string, config: LiteProxyRawConfig | null): string {
+    if (config === null) {
+      return rawJson;
+    }
+    const parsed = JSON.parse(rawJson) as Record<string, Object | string | number | boolean | null | undefined>;
+    parsed.providerName = 'Device local model';
+    parsed.baseUrl = 'http://127.0.0.1:' + (config.httpPort ?? 0).toString() + '/v1';
+    parsed.apiKey = config.authToken ?? '';
+    return JSON.stringify(parsed);
+  }
+
+  private loadLocalProviderConfig(proxyConfig: LiteProxyRawConfig | null = null): void {
+    try {
+      const rawJson = this.providerConfigForProxy(this.rawfileText(LOCAL_PROVIDER_CONFIG_RAWFILE), proxyConfig);
       configureLocalProviderConfigFromRawJson(rawJson);
       configureLocalModelSettingsFromRawJson(rawJson);
       hilog.info(DOMAIN, 'testTag', 'Loaded local provider config. agentCore=%{public}s %{public}s',
@@ -277,13 +358,19 @@ export default class EntryAbility extends UIAbility {
   }
 
   onDestroy(): void {
+    if (this.liteProxyActive) {
+      this.liteProxyActive = false;
+      LiteProxy.stop().catch((err: Error | Object | string | number | boolean | null | undefined) => {
+        hilog.error(DOMAIN, 'testTag', 'Lite proxy failed to stop. Cause: %{public}s', describeError(err));
+      });
+    }
     hilog.info(DOMAIN, 'testTag', '%{public}s', 'Ability onDestroy');
   }
 
   onNewWant(want: Want, launchParam: AbilityConstant.LaunchParam): void {
     hilog.info(DOMAIN, 'testTag', '%{public}s', 'Ability onNewWant');
     const uri = oauthUriFromWant(want);
-    this.loadLocalProviderConfig();
+    this.loadLocalProviderConfig(this.liteProxyConfig);
     if (!isComposioCallbackUri(uri)) {
       this.loadComposioConfig();
     }

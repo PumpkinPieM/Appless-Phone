@@ -29,13 +29,13 @@
         "name": "default",
         "type": "HarmonyOS",
         "material": {
-          "certpath": "/Users/luoyige/.ohos/config/default_AIPhoneDemo_dlY6wKHLZdqwaFWlwxgsEVDDzY3RBlRpidOe7L6pX_M=.cer",
+          "certpath": "C:\\Users\\mixup\\.ohos\\config\\default_Appless-Phone_Xkr-QacSCEQxtiPTbjGQrrUSujAr_otuKkWEgk6MKWc=.cer",
           "keyAlias": "debugKey",
-          "keyPassword": "0000001BD1CC2C110B45CD78BE5C9E0B1A011E7090077DF9E9D8406DB1B951F420FF1C2C0F263878776BA1",
-          "profile": "/Users/luoyige/.ohos/config/default_AIPhoneDemo_dlY6wKHLZdqwaFWlwxgsEVDDzY3RBlRpidOe7L6pX_M=.p7b",
+          "keyPassword": "0000001BBB57E772ECB18C4F6535E4E40DCF247BA66E7C0069842986D213F5267A63B0AC54BFA03E7FD34C",
+          "profile": "C:\\Users\\mixup\\.ohos\\config\\default_Appless-Phone_Xkr-QacSCEQxtiPTbjGQrrUSujAr_otuKkWEgk6MKWc=.p7b",
           "signAlg": "SHA256withECDSA",
-          "storeFile": "/Users/luoyige/.ohos/config/default_AIPhoneDemo_dlY6wKHLZdqwaFWlwxgsEVDDzY3RBlRpidOe7L6pX_M=.p12",
-          "storePassword": "0000001BEA2EE200E7453EC62354E64B05785A654ECC7D76DD0F49D61D9A1E1D254ADE051869DB4494CE7E"
+          "storeFile": "C:\\Users\\mixup\\.ohos\\config\\default_Appless-Phone_Xkr-QacSCEQxtiPTbjGQrrUSujAr_otuKkWEgk6MKWc=.p12",
+          "storePassword": "0000001B7026E0D20639E8A8B7C639F8F9182C199A7EB93EE4FB24F24A5AAA58D075096C7E525FF64ACD28"
         }
       }
     ]
@@ -56,6 +56,18 @@
     {
       "name": "agent_core",
       "srcPath": "./agent_core",
+      "targets": [
+        {
+          "name": "default",
+          "applyToProducts": [
+            "default"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "lite_proxy",
+      "srcPath": "./lite_proxy",
       "targets": [
         {
           "name": "default",
