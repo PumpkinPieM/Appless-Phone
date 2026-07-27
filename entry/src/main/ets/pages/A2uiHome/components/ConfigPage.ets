@@ -821,7 +821,7 @@ export struct ConfigPage {
             })
 
           this.InputLabel('Base URL', 12)
-          TextInput({ text: this.baseUrl, placeholder: 'http://127.0.0.1:11434' })
+          TextInput({ text: this.baseUrl, placeholder: 'http://127.0.0.1:18080/v1' })
             .height(42)
             .fontSize(13)
             .fontColor(COLOR_TEXT)

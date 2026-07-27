@@ -53,13 +53,15 @@ class CaptureTool implements AgentTool {
 class SequenceModel implements LocalModel {
   responses: string[];
   prompts: string[] = [];
+  conversationMessageCounts: number[] = [];
 
   constructor(responses: string[]) {
     this.responses = responses;
   }
 
-  async complete(prompt: string, _conversation?: ConversationContext): Promise<string> {
+  async complete(prompt: string, conversation?: ConversationContext): Promise<string> {
     this.prompts.push(prompt);
+    this.conversationMessageCounts.push(conversation?.toChatMessages().length ?? 0);
     const index = this.prompts.length - 1;
     return index < this.responses.length ? this.responses[index] : 'Final: no more responses';
   }
@@ -243,6 +245,21 @@ export default function reActAgentRunnerTest() {
       expect(model.prompts[0].indexOf('Calendar write rule')).assertLarger(-1);
       expect(model.prompts[0].indexOf('never calendar.events.search')).assertLarger(-1);
       expect(model.prompts[0].indexOf('omit missing new start or end')).assertLarger(-1);
+    });
+
+    it('passes conversation by role without duplicating it in the current prompt', 0, async () => {
+      const model = new SequenceModel(['Final: continued']);
+      const conversation = new ConversationContext();
+      conversation.addUser('Earlier user message');
+      conversation.addAssistant('Earlier assistant answer');
+      const runner = new ReActAgentRunner(model, new ToolRegistry(), 1);
+
+      await runner.run('Current task', (_event: AgentEvent) => {}, conversation);
+
+      expect(model.conversationMessageCounts[0]).assertEqual(2);
+      expect(model.prompts[0].indexOf('Earlier user message')).assertEqual(-1);
+      expect(model.prompts[0].indexOf('Earlier assistant answer')).assertEqual(-1);
+      expect(model.prompts[0].indexOf('Current task')).assertLarger(-1);
     });
 
     it('repairs raw line breaks inside JSON string tool args', 0, () => {

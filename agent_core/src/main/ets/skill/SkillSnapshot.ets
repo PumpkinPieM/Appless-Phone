@@ -50,7 +50,7 @@ export function buildSkillsSection(snapshot: SkillSnapshot | null): string {
 }
 
 export function buildLoopSystemPrompt(snapshot: SkillSnapshot | null): string {
-  let content = 'You are Loop, a concise ReAct agent on HarmonyOS.';
+  let content = 'You are a concise ReAct agent on HarmonyOS.';
   content += buildReActFormatRules();
   content += ' Use the ui tool when the user asks to show, display, or visualize something on screen.';
 

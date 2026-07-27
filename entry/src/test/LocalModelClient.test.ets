@@ -21,11 +21,11 @@ export default function localModelClientTest() {
       expect(buildChatCompletionsUrl('https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions')).assertEqual('https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions');
     });
 
-    it('defaults to DashScope qwen-max and reads its local rawfile key', 0, () => {
+    it('defaults to the local base URL and reads the DashScope rawfile key', 0, () => {
       configureLocalModelSettingsFromRawJson('{"DASHSCOPE_API_KEY":"test-key"}');
       const settings = defaultLocalModelSettings();
       expect(settings.provider).assertEqual('DashScope');
-      expect(settings.baseUrl).assertEqual('https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions');
+      expect(settings.baseUrl).assertEqual('http://127.0.0.1:18080/v1');
       expect(settings.model).assertEqual('qwen-max');
       expect(settings.apiKey).assertEqual('test-key');
       expect(settings.customParametersJson).assertEqual('{"enable_thinking":false}');

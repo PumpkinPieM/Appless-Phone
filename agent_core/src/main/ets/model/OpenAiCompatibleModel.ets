@@ -184,7 +184,7 @@ export class OpenAiCompatibleModel implements LocalModel {
   }
 
   private systemPrompt(): string {
-    let content = 'You are Loop, a concise ReAct agent on HarmonyOS. Reply with Thought and either Action: tool(JSON object) or Final: answer. Use only listed tools and follow the tool-routing rules in the prompt exactly.';
+    let content = 'You are a concise ReAct agent on HarmonyOS. Reply with Thought and either Action: tool(JSON object) or Final: answer. Use only listed tools and follow the tool-routing rules in the prompt exactly.';
     const skills = buildSkillsSection(this.skillSnapshot);
     if (skills.length > 0) {
       content += `\n\n${skills}`;
@@ -199,11 +199,14 @@ export class OpenAiCompatibleModel implements LocalModel {
       return baseJson;
     }
     try {
-      const parsed = JSON.parse(customJson) as Object;
-      if (parsed === undefined || parsed === null || Array.isArray(parsed)) {
+      const parsed = JSON.parse(customJson) as Object | string | number | boolean | null;
+      if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
         return baseJson;
       }
-      if (customJson.search(/"model"\s*:/) >= 0 || customJson.search(/"messages"\s*:/) >= 0) {
+      const customParameters =
+        parsed as Record<string, Object | string | number | boolean | null | undefined>;
+      const customKeys = Object.keys(customParameters);
+      if (customKeys.indexOf('model') >= 0 || customKeys.indexOf('messages') >= 0) {
         return baseJson;
       }
       const normalizedCustomJson = JSON.stringify(parsed);

@@ -12,7 +12,7 @@ interface LocalModelRawConfig {
 }
 
 const DEFAULT_PROVIDER: string = 'DashScope';
-const DEFAULT_BASE_URL: string = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions';
+const DEFAULT_BASE_URL: string = 'http://127.0.0.1:18080/v1';
 const DEFAULT_MODEL: string = 'qwen-max';
 const DEFAULT_CUSTOM_PARAMETERS_JSON: string = '{"enable_thinking":false}';
 

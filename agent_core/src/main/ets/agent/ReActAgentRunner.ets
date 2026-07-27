@@ -168,7 +168,7 @@ export class ReActAgentRunner {
   }
 
   private buildPrompt(task: string, scratchpad: string[], conversation?: ConversationContext): string {
-    let prompt = 'You are Loop, a HarmonyOS ReAct agent with tools.\n';
+    let prompt = 'You are a HarmonyOS ReAct agent with tools.\n';
     prompt += 'Current device local datetime: ' + currentLocalDateTime() + '. Resolve relative dates yourself before calling tools.\n';
     prompt += 'Use Thought, Action, Observation, and Final.\n';
     prompt += 'When an Action needs parameters, pass a JSON object in parentheses, for example Action: tool.name({"query":"value"}); use normal JSON arrays like ["a@example.com"], and do not pass bare keywords.\n';
@@ -186,10 +186,6 @@ export class ReActAgentRunner {
     }
     prompt += 'Calendar write rule: when the requested end state creates, updates, moves, or deletes a Google Calendar event, use the matching calendar.event.* write tool, never calendar.events.search. For an update or move with an incomplete destination time, call calendar.event.update with the existing-event query/timeMin/timeMax selector and omit missing new start or end; the client will keep real matches visible and ask for the missing time without writing. Never ask the user for an Event ID.\n';
     prompt += 'Use other tools or Final for plain text answers.\n\n';
-
-    if (conversation !== undefined && !conversation.isEmpty()) {
-      prompt += conversation.formatPriorConversation();
-    }
 
     if (!this.skillsInSystemPrompt) {
       const skillsSection = buildSkillsSection(this.skillSnapshot);
