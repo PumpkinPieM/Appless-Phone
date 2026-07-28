@@ -6,8 +6,8 @@ import { buildSkillsSection, SkillSnapshot } from '../skill/SkillSnapshot';
 import { LocalModel } from './LocalModel';
 import { LlmProvider } from './LlmProvider';
 
-const MODEL_CONNECT_TIMEOUT_MS = 20000;
-const MODEL_READ_TIMEOUT_MS = 40000;
+const MODEL_CONNECT_TIMEOUT_MS = 360000;
+const MODEL_READ_TIMEOUT_MS = 360000;
 const MODEL_MAX_ATTEMPTS = 2;
 
 interface ChatRequest {
