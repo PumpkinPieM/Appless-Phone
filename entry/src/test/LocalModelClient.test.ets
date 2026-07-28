@@ -31,6 +31,13 @@ export default function localModelClientTest() {
       expect(settings.customParametersJson).assertEqual('{"enable_thinking":false}');
       expect(settings.ignoreToolSurfaceUpdates).assertFalse();
       configureLocalModelSettingsFromRawJson('{}');
+      expect(defaultLocalModelSettings().apiKey).assertEqual('lite_proxy_token');
+    });
+
+    it('uses the lite proxy apiKey injected by the app', 0, () => {
+      configureLocalModelSettingsFromRawJson('{"apiKey":"proxy-key"}');
+      expect(defaultLocalModelSettings().apiKey).assertEqual('proxy-key');
+      configureLocalModelSettingsFromRawJson('{}');
     });
   });
 }

@@ -9,14 +9,16 @@ export interface LocalModelSettings {
 
 interface LocalModelRawConfig {
   DASHSCOPE_API_KEY?: string;
+  apiKey?: string;
 }
 
 const DEFAULT_PROVIDER: string = 'DashScope';
 const DEFAULT_BASE_URL: string = 'http://127.0.0.1:18080/v1';
 const DEFAULT_MODEL: string = 'qwen-max';
+const DEFAULT_API_KEY: string = 'lite_proxy_token';
 const DEFAULT_CUSTOM_PARAMETERS_JSON: string = '{"enable_thinking":false}';
 
-let dashScopeApiKey: string = '';
+let dashScopeApiKey: string = DEFAULT_API_KEY;
 
 function textOf(value: Object | string | number | boolean | null | undefined): string {
   if (value === undefined || value === null) {
@@ -33,7 +35,10 @@ function textOf(value: Object | string | number | boolean | null | undefined): s
 
 export function configureLocalModelSettingsFromRawJson(rawJson: string): void {
   const parsed = JSON.parse(rawJson) as LocalModelRawConfig;
-  dashScopeApiKey = textOf(parsed.DASHSCOPE_API_KEY).trim();
+  const configuredKey = textOf(parsed.DASHSCOPE_API_KEY).trim();
+  const proxyKey = textOf(parsed.apiKey).trim();
+  dashScopeApiKey = configuredKey.length > 0 ? configuredKey :
+    (proxyKey.length > 0 ? proxyKey : DEFAULT_API_KEY);
 }
 
 export function localModelSettingsDebugSummary(): string {
