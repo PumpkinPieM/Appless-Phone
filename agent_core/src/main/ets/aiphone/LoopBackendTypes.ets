@@ -16,6 +16,7 @@ export interface LoopMessage {
 
 export interface LoopBackendRequest {
   prompt: string;
+  stableInstructions?: string;
   userPrompt?: string;
   history: LoopMessage[];
   modelSettings: LoopModelSettings;

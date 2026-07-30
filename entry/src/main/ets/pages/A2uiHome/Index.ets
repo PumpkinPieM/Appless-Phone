@@ -1739,6 +1739,7 @@ struct Index {
       return;
     }
     this.inputPlaceholder = DEFAULT_INPUT_PLACEHOLDER;
+    const priorMessages = this.recentMessages();
     this.appendMessage('user', visibleText);
     aiLogInfo('[AIPhone][A2uiHomeSubmitPrompt] chars=' + modelPrompt.length.toString() +
       ' model=' + this.selectedModel +
@@ -1757,7 +1758,7 @@ struct Index {
       const result: A2uiCallResult = await callLocalModel(
         this.getSettings(),
         modelPrompt,
-        this.recentMessages(),
+        priorMessages,
         (surface: A2uiSurfaceState, raw: string, meta?: A2uiStreamMeta) => {
           this.isAwaitingFirstSurface = false;
           this.applySurface(surface);

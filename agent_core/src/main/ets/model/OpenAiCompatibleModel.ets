@@ -46,7 +46,11 @@ export class OpenAiCompatibleModel implements LocalModel {
     this.skillSnapshot = skillSnapshot ?? null;
   }
 
-  async complete(prompt: string, conversation?: ConversationContext): Promise<string> {
+  async complete(
+    prompt: string,
+    conversation?: ConversationContext,
+    stableInstructions: string = ''
+  ): Promise<string> {
     if (!this.provider.isConfigured()) {
       throw new Error('LLM provider is not configured.');
     }
@@ -54,7 +58,7 @@ export class OpenAiCompatibleModel implements LocalModel {
     let lastMessage = '';
     for (let attempt = 0; attempt < MODEL_MAX_ATTEMPTS; attempt++) {
       try {
-        return await this.completeOnce(prompt, conversation);
+        return await this.completeOnce(prompt, conversation, stableInstructions);
       } catch (error) {
         lastMessage = this.describeThrown(error);
         if (attempt + 1 >= MODEL_MAX_ATTEMPTS || !this.isRetryableTransportError(lastMessage)) {
@@ -65,7 +69,11 @@ export class OpenAiCompatibleModel implements LocalModel {
     throw new Error(`LLM request failed: ${lastMessage}`);
   }
 
-  private async completeOnce(prompt: string, conversation?: ConversationContext): Promise<string> {
+  private async completeOnce(
+    prompt: string,
+    conversation?: ConversationContext,
+    stableInstructions: string = ''
+  ): Promise<string> {
     const httpRequest = http.createHttp();
     const decoder = util.TextDecoder.create('utf-8');
     const requestStartMs = Date.now();
@@ -105,7 +113,7 @@ export class OpenAiCompatibleModel implements LocalModel {
           'Content-Type': 'application/json; charset=utf-8',
           'Accept': 'text/event-stream'
         },
-        extraData: this.buildRequestJson(prompt, conversation),
+        extraData: this.buildRequestJson(prompt, conversation, stableInstructions),
         connectTimeout: MODEL_CONNECT_TIMEOUT_MS,
         readTimeout: MODEL_READ_TIMEOUT_MS
       });
@@ -155,11 +163,15 @@ export class OpenAiCompatibleModel implements LocalModel {
       lower.indexOf('network') >= 0;
   }
 
-  private buildRequest(prompt: string, conversation?: ConversationContext): ChatRequest {
+  private buildRequest(
+    prompt: string,
+    conversation?: ConversationContext,
+    stableInstructions: string = ''
+  ): ChatRequest {
     const messages: ChatMessage[] = [
       {
         role: 'system',
-        content: this.systemPrompt()
+        content: this.systemPrompt(stableInstructions)
       }
     ];
 
@@ -183,8 +195,12 @@ export class OpenAiCompatibleModel implements LocalModel {
     };
   }
 
-  private systemPrompt(): string {
+  private systemPrompt(stableInstructions: string = ''): string {
     let content = 'You are a concise ReAct agent on HarmonyOS. Reply with Thought and either Action: tool(JSON object) or Final: answer. Use only listed tools and follow the tool-routing rules in the prompt exactly.';
+    const stable = stableInstructions.trim();
+    if (stable.length > 0) {
+      content += `\n\n${stable}`;
+    }
     const skills = buildSkillsSection(this.skillSnapshot);
     if (skills.length > 0) {
       content += `\n\n${skills}`;
@@ -192,8 +208,12 @@ export class OpenAiCompatibleModel implements LocalModel {
     return content;
   }
 
-  private buildRequestJson(prompt: string, conversation?: ConversationContext): string {
-    const baseJson = JSON.stringify(this.buildRequest(prompt, conversation));
+  private buildRequestJson(
+    prompt: string,
+    conversation?: ConversationContext,
+    stableInstructions: string = ''
+  ): string {
+    const baseJson = JSON.stringify(this.buildRequest(prompt, conversation, stableInstructions));
     const customJson = this.provider.customParametersJson.trim();
     if (customJson.length === 0) {
       return baseJson;

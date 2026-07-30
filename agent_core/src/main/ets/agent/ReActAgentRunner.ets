@@ -60,13 +60,24 @@ export class ReActAgentRunner {
     this.uiHandler = uiHandler ?? null;
   }
 
-  async run(task: string, listener: AgentListener, conversation?: ConversationContext): Promise<void> {
+  async run(
+    task: string,
+    listener: AgentListener,
+    conversation?: ConversationContext,
+    additionalStableInstructions: string = ''
+  ): Promise<void> {
     const scratchpad: string[] = [];
+    const stableInstructions = this.buildStableInstructions(additionalStableInstructions);
+    const localDateTime = currentLocalDateTime();
 
     for (let step = 0; step < this.maxSteps; step++) {
       let response: string;
       try {
-        response = await this.model.complete(this.buildPrompt(task, scratchpad, conversation), conversation);
+        response = await this.model.complete(
+          this.buildDynamicPrompt(task, scratchpad, localDateTime),
+          conversation,
+          stableInstructions
+        );
       } catch (error) {
         const message = error instanceof Error ? error.message : `${error}`;
         listener(new AgentEvent(AgentEventKind.ERROR, message));
@@ -167,9 +178,8 @@ export class ReActAgentRunner {
     }
   }
 
-  private buildPrompt(task: string, scratchpad: string[], conversation?: ConversationContext): string {
+  private buildStableInstructions(additionalStableInstructions: string = ''): string {
     let prompt = 'You are a HarmonyOS ReAct agent with tools.\n';
-    prompt += 'Current device local datetime: ' + currentLocalDateTime() + '. Resolve relative dates yourself before calling tools.\n';
     prompt += 'Use Thought, Action, Observation, and Final.\n';
     prompt += 'When an Action needs parameters, pass a JSON object in parentheses, for example Action: tool.name({"query":"value"}); use normal JSON arrays like ["a@example.com"], and do not pass bare keywords.\n';
     if (this.uiHandler !== null) {
@@ -196,8 +206,19 @@ export class ReActAgentRunner {
 
     prompt += 'Tools:\n';
     prompt += this.tools.describeTools();
-    prompt += '\nUser task:\n';
+    const additional = additionalStableInstructions.trim();
+    if (additional.length > 0) {
+      prompt += `\n${additional}`;
+    }
+    return prompt.trim();
+  }
+
+  private buildDynamicPrompt(task: string, scratchpad: string[], localDateTime: string): string {
+    let prompt = 'User task:\n';
     prompt += task;
+    prompt += '\n\nRuntime context:\n';
+    prompt += 'Current device local datetime: ' + localDateTime +
+      '. Resolve relative dates yourself before calling tools.\n';
     prompt += '\n\n';
 
     for (const item of scratchpad) {

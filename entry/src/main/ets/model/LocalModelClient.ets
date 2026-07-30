@@ -237,6 +237,7 @@ export async function callLocalModel(
     (settings.ignoreToolSurfaceUpdates ? 'true' : 'false'));
   const request: LoopBackendRequest = {
     prompt: preparedPersona.modelPrompt,
+    stableInstructions: preparedPersona.stableInstructions,
     userPrompt: preparedPersona.userPrompt,
     history: loopHistory(history),
     modelSettings: {

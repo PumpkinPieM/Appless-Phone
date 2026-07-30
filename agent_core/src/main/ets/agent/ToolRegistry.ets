@@ -64,11 +64,12 @@ export class ToolRegistry {
   }
 
   describeTools(): string {
-    let description = '';
+    const descriptions: string[] = [];
     this.tools.forEach((tool: AgentTool) => {
-      description += `- ${tool.name()}: ${tool.description()}\n`;
+      descriptions.push(`- ${tool.name()}: ${tool.description()}`);
     });
-    return description;
+    descriptions.sort();
+    return descriptions.join('\n') + (descriptions.length > 0 ? '\n' : '');
   }
 
   async run(name: string, input: string): Promise<string> {

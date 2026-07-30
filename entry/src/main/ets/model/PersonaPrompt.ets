@@ -4,6 +4,7 @@ import { personaPackForId } from './PersonaStore';
 import { routePersonaForPrompt } from './PersonaRouter';
 
 export interface PreparedPersonaPrompt {
+  stableInstructions: string;
   modelPrompt: string;
   userPrompt: string;
   runtime: PersonaRuntimeData;
@@ -78,10 +79,9 @@ export function preparePersonaPrompt(prompt: string): PreparedPersonaPrompt {
     summary: memorySummary(preferences),
     preferences: preferences
   };
-  const modelPrompt = [
+  const stableInstructions = [
     'Persona: ' + pack.manifest.name,
     'Persona id: ' + pack.manifest.id,
-    'Persona reason: ' + route.reason,
     'Soul:',
     pack.soul,
     'Active skill:',
@@ -93,11 +93,15 @@ export function preparePersonaPrompt(prompt: string): PreparedPersonaPrompt {
     'Tool args instruction:',
     'Call exactly one best-fit tool when a tool is needed. Preserve the original user task. For food.search, include brandPreference and sweetness JSON args when memory says 瑞幸 or 半糖. Include brandStrict=true when memory says 只喝瑞幸.',
     'Memory update instruction:',
-    'When the user states a durable preference, identity fact, or stable constraint for the active persona, call memory.update with JSON { personaId, summary, memoryText, reason, suggestedAction }. Do not call search tools in the same turn. For the coffee preference example, suggestedAction should let the user rerun the previous coffee task, such as label=按新偏好重新查咖啡 and prompt=点一杯咖啡.',
+    'When the user states a durable preference, identity fact, or stable constraint for the active persona, call memory.update with JSON { personaId, summary, memoryText, reason, suggestedAction }. Do not call search tools in the same turn. For the coffee preference example, suggestedAction should let the user rerun the previous coffee task, such as label=按新偏好重新查咖啡 and prompt=点一杯咖啡.'
+  ].join('\n');
+  const modelPrompt = [
+    'Persona reason: ' + route.reason,
     'User task:',
     prompt
   ].join('\n');
   return {
+    stableInstructions: stableInstructions,
     modelPrompt: modelPrompt,
     userPrompt: prompt,
     runtime: runtime,

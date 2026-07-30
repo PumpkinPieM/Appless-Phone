@@ -256,7 +256,7 @@ export class LoopBackend {
           observation: event.text
         });
       }
-    }, conversation);
+    }, conversation, request.stableInstructions);
 
     return {
       ok: error.length === 0,

@@ -26,7 +26,11 @@ class SingleActionModel implements LocalModel {
     this.response = response;
   }
 
-  async complete(_prompt: string, _conversation?: ConversationContext): Promise<string> {
+  async complete(
+    _prompt: string,
+    _conversation?: ConversationContext,
+    _stableInstructions?: string
+  ): Promise<string> {
     return this.response;
   }
 }
@@ -53,14 +57,20 @@ class CaptureTool implements AgentTool {
 class SequenceModel implements LocalModel {
   responses: string[];
   prompts: string[] = [];
+  stableInstructions: string[] = [];
   conversationMessageCounts: number[] = [];
 
   constructor(responses: string[]) {
     this.responses = responses;
   }
 
-  async complete(prompt: string, conversation?: ConversationContext): Promise<string> {
+  async complete(
+    prompt: string,
+    conversation?: ConversationContext,
+    stableInstructions: string = ''
+  ): Promise<string> {
     this.prompts.push(prompt);
+    this.stableInstructions.push(stableInstructions);
     this.conversationMessageCounts.push(conversation?.toChatMessages().length ?? 0);
     const index = this.prompts.length - 1;
     return index < this.responses.length ? this.responses[index] : 'Final: no more responses';
@@ -242,9 +252,10 @@ export default function reActAgentRunnerTest() {
 
       await runner.run('把明天下午的日程移到上午', (_event: AgentEvent) => {});
 
-      expect(model.prompts[0].indexOf('Calendar write rule')).assertLarger(-1);
-      expect(model.prompts[0].indexOf('never calendar.events.search')).assertLarger(-1);
-      expect(model.prompts[0].indexOf('omit missing new start or end')).assertLarger(-1);
+      expect(model.stableInstructions[0].indexOf('Calendar write rule')).assertLarger(-1);
+      expect(model.stableInstructions[0].indexOf('never calendar.events.search')).assertLarger(-1);
+      expect(model.stableInstructions[0].indexOf('omit missing new start or end')).assertLarger(-1);
+      expect(model.prompts[0].indexOf('Calendar write rule')).assertEqual(-1);
     });
 
     it('passes conversation by role without duplicating it in the current prompt', 0, async () => {
@@ -260,6 +271,35 @@ export default function reActAgentRunnerTest() {
       expect(model.prompts[0].indexOf('Earlier user message')).assertEqual(-1);
       expect(model.prompts[0].indexOf('Earlier assistant answer')).assertEqual(-1);
       expect(model.prompts[0].indexOf('Current task')).assertLarger(-1);
+    });
+
+    it('keeps the large tool prefix stable while user tasks remain dynamic', 0, async () => {
+      const model = new SequenceModel(['Final: Shanghai', 'Final: Hangzhou']);
+      const runner = new ReActAgentRunner(model, new ToolRegistry(), 1);
+      const persona = 'Persona: Weather companion\nSoul:\nUse real weather data.';
+
+      await runner.run('查一下上海明天的天气', (_event: AgentEvent) => {}, undefined, persona);
+      await runner.run('查一下杭州明天的天气', (_event: AgentEvent) => {}, undefined, persona);
+
+      expect(model.stableInstructions[0]).assertEqual(model.stableInstructions[1]);
+      expect(model.stableInstructions[0].indexOf('Tools:')).assertLarger(-1);
+      expect(model.stableInstructions[0].indexOf('- note:')).assertLarger(-1);
+      expect(model.stableInstructions[0].indexOf(persona)).assertLarger(-1);
+      expect(model.stableInstructions[0].indexOf('Current device local datetime')).assertEqual(-1);
+      expect(model.stableInstructions[0].indexOf('上海')).assertEqual(-1);
+      expect(model.stableInstructions[0].indexOf('杭州')).assertEqual(-1);
+      expect(model.prompts[0].indexOf('Current device local datetime')).assertLarger(-1);
+      expect(model.prompts[0].indexOf(persona)).assertEqual(-1);
+      expect(model.prompts[0].indexOf('上海')).assertLarger(-1);
+      expect(
+        model.prompts[0].indexOf('上海') < model.prompts[0].indexOf('Current device local datetime')
+      ).assertTrue();
+      expect(model.prompts[0].indexOf('杭州')).assertEqual(-1);
+      expect(model.prompts[1].indexOf('杭州')).assertLarger(-1);
+      expect(
+        model.prompts[1].indexOf('杭州') < model.prompts[1].indexOf('Current device local datetime')
+      ).assertTrue();
+      expect(model.prompts[1].indexOf('上海')).assertEqual(-1);
     });
 
     it('repairs raw line breaks inside JSON string tool args', 0, () => {

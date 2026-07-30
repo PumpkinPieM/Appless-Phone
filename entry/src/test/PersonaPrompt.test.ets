@@ -8,9 +8,10 @@ export default function personaPromptTest() {
       configureDefaultPersonaStoreForTests();
       const prepared = preparePersonaPrompt('点一杯咖啡');
 
-      expect(prepared.modelPrompt.indexOf('Persona: 饮食搭子')).assertLarger(-1);
-      expect(prepared.modelPrompt.indexOf('food.search')).assertLarger(-1);
+      expect(prepared.stableInstructions.indexOf('Persona: 饮食搭子')).assertLarger(-1);
+      expect(prepared.stableInstructions.indexOf('food.search')).assertLarger(-1);
       expect(prepared.modelPrompt.indexOf('User task:\n点一杯咖啡')).assertLarger(-1);
+      expect(prepared.modelPrompt.indexOf('Persona: 饮食搭子')).assertEqual(-1);
       expect(prepared.userPrompt).assertEqual('点一杯咖啡');
       expect(prepared.runtime.id).assertEqual('food_companion');
       expect(prepared.memoryRuntime.preferences.length).assertEqual(0);
@@ -58,10 +59,10 @@ export default function personaPromptTest() {
       configureDefaultPersonaStoreForTests();
       const prepared = preparePersonaPrompt('点一杯咖啡');
 
-      expect(prepared.modelPrompt.indexOf('Active skill:')).assertLarger(-1);
-      expect(prepared.modelPrompt.indexOf('# Food Search')).assertLarger(-1);
-      expect(prepared.modelPrompt.indexOf('coffee-order')).assertLarger(-1);
-      expect(prepared.modelPrompt.indexOf('Planned capability')).assertEqual(-1);
+      expect(prepared.stableInstructions.indexOf('Active skill:')).assertLarger(-1);
+      expect(prepared.stableInstructions.indexOf('# Food Search')).assertLarger(-1);
+      expect(prepared.stableInstructions.indexOf('coffee-order')).assertLarger(-1);
+      expect(prepared.stableInstructions.indexOf('Planned capability')).assertEqual(-1);
     });
   });
 }

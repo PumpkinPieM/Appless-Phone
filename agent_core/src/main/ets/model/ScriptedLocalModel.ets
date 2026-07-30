@@ -2,7 +2,11 @@ import { ConversationContext } from '../agent/ConversationContext';
 import { LocalModel } from './LocalModel';
 
 export class ScriptedLocalModel implements LocalModel {
-  async complete(prompt: string, _conversation?: ConversationContext): Promise<string> {
+  async complete(
+    prompt: string,
+    _conversation?: ConversationContext,
+    _stableInstructions?: string
+  ): Promise<string> {
     if (!prompt.toLowerCase().includes('observation:')) {
       const task = this.extractTask(prompt);
       const lower = task.toLowerCase();
